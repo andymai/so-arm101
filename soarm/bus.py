@@ -160,16 +160,24 @@ class Bus:
     COMM_FAIL = -1
 
     # --- raw register access: read() is tolerant (for display); value() raises ---
-    def read(self, motor_id: int, reg: str) -> tuple[int, int, int]:
+    def read(self, motor_id: int, reg: str, retries: int = 2) -> tuple[int, int, int]:
         """Low-level read. Returns (data, comm, err); comm != 0 means no response.
-        Never raises — callers that display health (scan) inspect comm themselves."""
+        Never raises — callers that display health (scan) inspect comm themselves.
+        Retries a few times: this bus drops the occasional single packet, and a
+        transient miss shouldn't read as a dead motor (false NO RESPONSE / preflight fail)."""
         addr, length = REG[reg]
-        try:
-            if length == 1:
-                return self.ph.read1ByteTxRx(self.po, motor_id, addr)
-            return self.ph.read2ByteTxRx(self.po, motor_id, addr)
-        except Exception:  # serial dropout, contention, etc.
-            return (0, self.COMM_FAIL, 0)
+        result = (0, self.COMM_FAIL, 0)
+        for _ in range(retries + 1):
+            try:
+                if length == 1:
+                    result = self.ph.read1ByteTxRx(self.po, motor_id, addr)
+                else:
+                    result = self.ph.read2ByteTxRx(self.po, motor_id, addr)
+            except Exception:  # serial dropout, contention, etc.
+                result = (0, self.COMM_FAIL, 0)
+            if result[1] == 0:  # comm success — stop retrying
+                break
+        return result
 
     def read_display(self, motor_id: int, reg: str) -> str | int:
         """Read a register for display purposes. Returns the int value on success,

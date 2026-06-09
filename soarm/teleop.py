@@ -38,7 +38,7 @@ def _preflight(min_volt: float = 9.0) -> bool:
                     if flags or low:
                         ok = False
                         print(f"   {name:14} {v/10:.1f}V  PROBLEM: "
-                              f"{','.join(flags) or ''}{' LOW_VOLTAGE' if low else ''}")
+                              f"{','.join(flags)}{' LOW_VOLTAGE' if low else ''}")
         except Exception as e:  # noqa: BLE001
             print(f"   could not open bus: {e}")
             ok = False

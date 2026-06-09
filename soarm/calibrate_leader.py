@@ -30,6 +30,7 @@ from .bus import (
     NAME_TO_ID,
     RESOLUTION,
     Bus,
+    BusCommError,
     decode_present_position,
     load_config,
 )
@@ -74,15 +75,19 @@ def main() -> None:
     # 1 + 2: recenter, then sweep ranges (raw bus)
     with Bus(cfg.port) as bus:
         input("Put the leader in a clean NEUTRAL pose (all joints mid-travel), press Enter...")
-        for mid in MOTORS:
-            bus.recenter(mid)
-        print("recentered all joints to 2048.")
-        ranges = _sweep(bus, swept_ids)
-        bad = [MOTORS[i] for i, (lo, hi) in ranges.items() if hi - lo < 200]
-        if bad:
-            raise SystemExit(f"insufficient range captured for {bad} — sweep each joint "
-                             "fully (or check the bus); not writing a bad calibration.")
-        homings = {mid: bus.homing_offset(mid) for mid in MOTORS}
+        try:
+            for mid in MOTORS:
+                bus.recenter(mid)
+            print("recentered all joints to 2048.")
+            ranges = _sweep(bus, swept_ids)
+            bad = [MOTORS[i] for i, (lo, hi) in ranges.items() if hi - lo < 200]
+            if bad:
+                raise SystemExit(f"insufficient range captured for {bad} — sweep each joint "
+                                 "fully (or check the bus); not writing a bad calibration.")
+            homings = {mid: bus.homing_offset(mid) for mid in MOTORS}
+        except BusCommError as e:
+            raise SystemExit(f"bus dropout during calibration ({e}); not writing a partial "
+                             "calibration — retry.")
 
     # 3: build calibration dict (wrist_roll is continuous -> full range)
     calib = {}
