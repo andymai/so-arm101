@@ -16,7 +16,7 @@ upgrade:
    it), and IK needs `placo` + `pin` (pinocchio) — none installed; heavy/uncertain on
    macOS arm64.
 3. **Hardware we can't validate** — requires an iOS device with HEBI Mobile I/O (or Android
-   WebXR) plus the SO101 URDF (available via `python sim/fetch.py`).
+   WebXR) plus the SO101 URDF (available via `soarm fetch`).
 
 ## The blocker: the LeRobot upgrade tradeoff
 
@@ -32,7 +32,7 @@ Enabling this means upgrading to **LeRobot 0.5.x**, which we deliberately avoide
 2. Run the import smoke test; fix `bus.py`/`devices.py` import paths for the consolidated
    SO-100/101 module layout.
 3. Re-validate the whole toolkit on hardware (calibration especially — the seam workaround).
-4. Add `soarm-teleop-phone`: reuse `soarm.teleop._preflight`, point IK at `sim/SO101/
-   so101_new_calib.urdf`, and reuse the EE safety bounds. Then test with the phone app.
+4. Add a `soarm teleop-phone` subcommand: reuse `soarm.teleop._preflight`, point IK at
+   `sim/SO101/so101_new_calib.urdf`, and reuse the EE safety bounds. Then test with the phone app.
 
-Until then, use the leader arm (`soarm-teleop`).
+Until then, use the leader arm (`soarm teleop`).
