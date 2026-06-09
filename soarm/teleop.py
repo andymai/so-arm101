@@ -18,9 +18,14 @@ Examples:
 from __future__ import annotations
 
 import argparse
+import datetime
 import subprocess
+import sys
+from pathlib import Path
 
 from .bus import MOTORS, Bus, error_flags, lerobot_cli, load_config
+
+LOG_DIR = Path(__file__).resolve().parent.parent / "logs"
 
 
 def _preflight(min_volt: float = 9.0) -> bool:
@@ -76,7 +81,54 @@ def main() -> None:
     if not args.no_clamp:
         cmd.append(f"--robot.max_relative_target={args.clamp}")
     print("\nlaunching:", " ".join(cmd), "\n")
-    raise SystemExit(subprocess.call(cmd))
+    raise SystemExit(_run_logged(cmd))
+
+
+def _run_logged(cmd: list[str]) -> int:
+    """Run teleop, teeing output to a timestamped log. On a nonzero exit (teleop died —
+    which drops torque on the whole arm), run a post-mortem so an intermittent 'goes limp'
+    is self-documenting: the log holds the death traceback AND the motor state at failure."""
+    LOG_DIR.mkdir(exist_ok=True)
+    stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    logpath = LOG_DIR / f"teleop-{stamp}.log"
+    print(f"logging to {logpath}\n")
+    with open(logpath, "w") as log:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, bufsize=1)
+        for line in proc.stdout:
+            sys.stdout.write(line)
+            log.write(line)
+        rc = proc.wait()
+        if rc != 0:
+            _post_mortem(log)
+    return rc
+
+
+def _post_mortem(log) -> None:
+    """Read every motor's voltage/temp/error bits right after teleop died. A latched
+    OVERLOAD/OVERHEAT bit or high temp => protection tripped (not power); all-clean with a
+    'no status packet' traceback => comm timeout under load; a VOLTAGE bit => supply."""
+    def emit(line: str) -> None:
+        sys.stdout.write(line + "\n")
+        log.write(line + "\n")
+
+    emit("\n=== soarm-teleop post-mortem (teleop exited non-zero; arm torque is now off) ===")
+    cfg = load_config()
+    for arm in ("follower", "leader"):
+        try:
+            with Bus(cfg[arm].port) as bus:
+                for mid, name in MOTORS.items():
+                    v, comm, err = bus.read(mid, "Present_Voltage")
+                    if comm != 0:
+                        emit(f"  [{arm}] {name:14} NO RESPONSE")
+                        continue
+                    t, _, _ = bus.read(mid, "Present_Temperature")
+                    flags = ",".join(error_flags(err)) or "ok"
+                    temp = f"{t}C" if isinstance(t, int) else "--"
+                    emit(f"  [{arm}] {name:14} {v / 10:>5.1f}V {temp:>4}  {flags}")
+        except Exception as e:  # noqa: BLE001 — diagnostics must not raise
+            emit(f"  [{arm}] bus unavailable: {e}")
+    emit("=== end post-mortem — share this log to diagnose the limp ===")
 
 
 if __name__ == "__main__":
