@@ -1,10 +1,7 @@
-#!/usr/bin/env python3
-"""Fetch the SO-101 simulation assets (URDF + MuJoCo MJCF + meshes) from TheRobotStudio.
+"""`soarm fetch`: download the SO-101 URDF + meshes used by the visualization tools.
 
-We don't vendor these — they're ~MBs of third-party CAD meshes with their own (Apache-2.0)
-license. This downloads them on demand into sim/SO101/ (gitignored).
-
-    python sim/fetch.py
+We don't vendor these — they're ~MBs of third-party CAD meshes with their own
+(Apache-2.0) license. This downloads them on demand into sim/SO101/ (gitignored).
 
 Source: https://github.com/TheRobotStudio/SO-ARM100  (Simulation/SO101, Apache-2.0)
 """
@@ -20,10 +17,11 @@ from pathlib import Path
 REPO = "TheRobotStudio/SO-ARM100"
 BRANCH = "main"
 SUBDIR = "Simulation/SO101"
-DEST = Path(__file__).resolve().parent / "SO101"
+# Repo-relative asset dir, consistent with calibration/ and logs/. Gitignored.
+DEST = Path(__file__).resolve().parent.parent / "sim" / "SO101"
 
 
-def main() -> int:
+def run() -> None:
     url = f"https://codeload.github.com/{REPO}/tar.gz/refs/heads/{BRANCH}"
     print(f"downloading {REPO}@{BRANCH} ...")
     with urllib.request.urlopen(url) as resp:  # noqa: S310 (trusted host)
@@ -51,11 +49,6 @@ def main() -> int:
 
     if count == 0:
         print(f"ERROR: nothing extracted — did {SUBDIR} move upstream?", file=sys.stderr)
-        return 1
+        raise SystemExit(1)
     print(f"extracted {count} files into {DEST}")
-    print("view with:  python -m mujoco.viewer --mjcf sim/SO101/so101_new_calib.xml")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    print("view with:  soarm view   (or: soarm twin --live)")
