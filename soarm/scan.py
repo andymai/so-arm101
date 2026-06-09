@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import argparse
 
-from .bus import ERROR_BITS, MOTORS, Bus, resolve_arm, scan_port
+from .bus import MOTORS, Bus, add_arm_port_args, error_flags, resolve_arm, scan_port
 
 
 def _list_ports() -> None:
@@ -25,8 +25,7 @@ def _list_ports() -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="SO-ARM101 bus health scan")
-    ap.add_argument("--arm", choices=["follower", "leader"], help="arm from config.toml")
-    ap.add_argument("--port", help="explicit serial port (overrides --arm)")
+    add_arm_port_args(ap)
     ap.add_argument("--sweep", action="store_true", help="full baudrate/id discovery")
     ap.add_argument("--list-ports", action="store_true", help="list connected boards and exit")
     args = ap.parse_args()
@@ -53,12 +52,11 @@ def main() -> None:
                 problems += 1
                 continue
             volt = data / 10
-            tdata, tcomm, _ = bus.read(mid, "Present_Temperature")
-            temp = tdata if tcomm == 0 else "--"
-            flags = ",".join(b for k, b in ERROR_BITS.items() if err & k) or "ok"
+            temp = bus.read_display(mid, "Present_Temperature")
+            flags = ",".join(error_flags(err)) or "ok"
             if err:
                 problems += 1
-            print(f"{mid:>2}  {name:14} {volt:>5}V {temp:>4}C {flags:>22}")
+            print(f"{mid:>2}  {name:14} {volt:>5.1f}V {temp:>4}C {flags:>22}")
     print("\n" + ("all motors healthy" if problems == 0 else f"{problems} problem(s) found"))
     raise SystemExit(1 if problems else 0)
 
