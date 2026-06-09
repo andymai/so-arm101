@@ -17,6 +17,7 @@ try:
 except ModuleNotFoundError:  # Python 3.10
     import tomli as tomllib
 import argparse
+import sys
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -268,3 +269,11 @@ class Bus:
 def scan_port(port: str):
     """Sweep all baudrates/ids. Returns LeRobot's {baud: [ids]} dict."""
     return FeetechMotorsBus.scan_port(port)
+
+
+def lerobot_cli(name: str) -> str:
+    """Resolve a lerobot-* console script next to the current interpreter (the venv's
+    bin/), so subprocesses find it even when our entry point is run without the venv on
+    PATH (uv run, a direct path, pipx). Falls back to the bare name when activated."""
+    candidate = Path(sys.executable).parent / name
+    return str(candidate) if candidate.exists() else name

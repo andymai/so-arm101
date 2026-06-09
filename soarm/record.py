@@ -22,7 +22,7 @@ import getpass
 import re
 import subprocess
 
-from .bus import load_config
+from .bus import lerobot_cli, load_config
 from .teleop import _preflight
 
 
@@ -62,7 +62,7 @@ def main() -> None:
     args = ap.parse_args()
 
     if args.list_cameras:
-        raise SystemExit(subprocess.call(["lerobot-find-cameras", "opencv"]))
+        raise SystemExit(subprocess.call([lerobot_cli("lerobot-find-cameras"), "opencv"]))
 
     if not args.task:
         raise SystemExit("--task is required (the dataset's natural-language label)")
@@ -75,7 +75,7 @@ def main() -> None:
     repo_id = args.repo_id or f"{getpass.getuser()}/so101-dataset"
 
     cmd = [
-        "lerobot-record",
+        lerobot_cli("lerobot-record"),
         "--robot.type=so101_follower", f"--robot.port={f.port}", f"--robot.id={f.id}",
         "--teleop.type=so101_leader", f"--teleop.port={lead.port}", f"--teleop.id={lead.id}",
         f"--dataset.repo_id={repo_id}",

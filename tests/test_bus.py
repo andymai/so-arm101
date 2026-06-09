@@ -2,6 +2,9 @@
 
 import pytest
 
+import sys
+from pathlib import Path
+
 from soarm.bus import (
     CONTINUOUS,
     MOTORS,
@@ -12,6 +15,7 @@ from soarm.bus import (
     encode_sign_magnitude,
     error_flags,
     fold_homing,
+    lerobot_cli,
     load_config,
     resolve_arm,
 )
@@ -109,6 +113,14 @@ def test_config_has_both_arms():
     cfg = load_config()
     assert {"follower", "leader"} <= set(cfg)
     assert cfg["follower"].port and cfg["leader"].port
+
+
+def test_lerobot_cli_resolves_sibling_then_falls_back():
+    # a real sibling of the interpreter (use the interpreter itself) resolves to its path...
+    bindir = Path(sys.executable)
+    assert lerobot_cli(bindir.name) == str(bindir)
+    # ...and an unknown CLI falls back to the bare name (PATH lookup when activated)
+    assert lerobot_cli("definitely-not-a-real-cli-xyz") == "definitely-not-a-real-cli-xyz"
 
 
 def test_motor_map_consistency():
