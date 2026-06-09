@@ -54,6 +54,11 @@ class Robot:
         self.joint_names = list(self.urdf.actuated_joint_names)
         self._nodes = list(self.urdf.scene.graph.nodes_geometry)
 
+    @property
+    def gripper_limits(self) -> tuple[float, float]:
+        joint = self.urdf.joint_map["gripper"]
+        return (joint.limit.lower, joint.limit.upper)
+
     def log_meshes(self) -> None:
         """Log every link mesh once as static geometry (local frame)."""
         scene = self.urdf.scene
@@ -82,16 +87,20 @@ class Robot:
                    rr.Transform3D(translation=t[:3, 3], mat3x3=t[:3, :3]))
 
 
-def normalized_to_radians(pos: dict[str, float], urdf: yourdfpy.URDF) -> dict[str, float]:
-    """Map LeRobot normalized joints (degrees; gripper 0-100) to URDF joint radians."""
+def normalized_to_radians(pos: dict[str, float], joint_names: list[str],
+                          gripper_limits: tuple[float, float]) -> dict[str, float]:
+    """Map LeRobot normalized joints (degrees; gripper 0-100) to URDF joint radians.
+
+    Revolute joints: degrees -> radians. The gripper is 0-100% -> [lo, hi] of its URDF
+    limit. Decoupled from yourdfpy (takes plain joint_names + gripper_limits) so the
+    mapping is unit-testable without the gitignored mesh assets."""
     out: dict[str, float] = {}
-    for name in urdf.actuated_joint_names:
+    for name in joint_names:
         v = pos.get(name)
         if v is None:
             continue
         if name == "gripper":
-            joint = urdf.joint_map[name]
-            lo, hi = joint.limit.lower, joint.limit.upper
+            lo, hi = gripper_limits
             out[name] = lo + (v / 100.0) * (hi - lo)
         else:
             out[name] = math.radians(v)
@@ -184,8 +193,10 @@ def _twin_live(follower_robot: Robot, leader_robot: Robot, *, tol: float, hz: fl
                 lpos = leader_positions(lead)
                 rr.set_time_seconds("wall", time.monotonic())
 
-                follower_robot.set_joints(normalized_to_radians(fpos, follower_robot.urdf))
-                leader_robot.set_joints(normalized_to_radians(lpos, leader_robot.urdf))
+                follower_robot.set_joints(normalized_to_radians(
+                    fpos, follower_robot.joint_names, follower_robot.gripper_limits))
+                leader_robot.set_joints(normalized_to_radians(
+                    lpos, leader_robot.joint_names, leader_robot.gripper_limits))
 
                 worst = 0.0
                 for name in MOTORS.values():
@@ -259,7 +270,7 @@ def replay(
         state = item.get("observation.state")
         if state is not None:
             pos = {name: float(state[j]) for j, name in enumerate(joints) if j < len(state)}
-            robot.set_joints(normalized_to_radians(pos, robot.urdf))
+            robot.set_joints(normalized_to_radians(pos, robot.joint_names, robot.gripper_limits))
         for key, val in item.items():
             if key.startswith("observation.images"):
                 img = np.asarray(val)
