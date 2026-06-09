@@ -1,0 +1,14 @@
+# SO-ARM101 connection config.
+# Ports are macOS usbmodem paths; they can change if you swap USB ports.
+# Re-discover with: lerobot-find-port  (or `soarm-scan --list-ports`)
+# Any tool accepts --port to override these.
+
+[follower]
+port = "/dev/tty.usbmodem5B415319461"
+id = "my_follower"
+supply = "12V"   # follower needs torque
+
+[leader]
+port = "/dev/tty.usbmodem5B415322401"
+id = "my_leader"
+supply = "5V"    # leader is back-driven by hand

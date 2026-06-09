@@ -1,0 +1,27 @@
+[project]
+name = "soarm101"
+version = "0.1.0"
+description = "Setup, repair, and brownout-safe operation tools for the SO-ARM101 (LeRobot)"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "lerobot[feetech]>=0.4.4",
+    "tomli>=2.0; python_version < '3.11'",
+]
+
+[project.scripts]
+soarm-scan = "soarm.scan:main"
+soarm-sync-check = "soarm.sync_check:main"
+soarm-recenter = "soarm.recenter:main"
+soarm-fix-voltage-limit = "soarm.fix_voltage_limit:main"
+soarm-calibrate-leader = "soarm.calibrate_leader:main"
+soarm-set-protection = "soarm.protect:main"
+soarm-teleop = "soarm.teleop:main"
+soarm-calib = "soarm.calib_io:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["soarm"]
