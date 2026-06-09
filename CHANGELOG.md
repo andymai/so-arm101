@@ -3,6 +3,19 @@
 All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.2.0](https://github.com/andymai/so-arm101/compare/soarm101-v0.1.0...soarm101-v0.2.0) (2026-06-09)
+
+
+### Features
+
+* recenter --verify, soarm-record, sim assets; doc upgrades ([5f6edb1](https://github.com/andymai/so-arm101/commit/5f6edb1c99afb562bd040329f62b5c0c0d479dc7))
+* soarm-find-port — auto-detect follower/leader by supply voltage ([8302ea7](https://github.com/andymai/so-arm101/commit/8302ea7f5b092b6b4792b2c0eaa5e4cc87fbd68c))
+
+
+### Bug Fixes
+
+* resolve lerobot-* CLIs next to the interpreter for subprocess calls ([ac7c7ca](https://github.com/andymai/so-arm101/commit/ac7c7ca5f8b359e8c9029cbcf6106fa49cb8c522))
+
 ## [Unreleased]
 
 ### Added
