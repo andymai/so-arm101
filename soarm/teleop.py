@@ -20,7 +20,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 
-from .bus import MOTORS, Bus, error_flags, load_config
+from .bus import MOTORS, Bus, error_flags, lerobot_cli, load_config
 
 
 def _preflight(min_volt: float = 9.0) -> bool:
@@ -69,7 +69,7 @@ def main() -> None:
     cfg = load_config()
     f, lead = cfg["follower"], cfg["leader"]
     cmd = [
-        "lerobot-teleoperate",
+        lerobot_cli("lerobot-teleoperate"),
         "--robot.type=so101_follower", f"--robot.port={f.port}", f"--robot.id={f.id}",
         "--teleop.type=so101_leader", f"--teleop.port={lead.port}", f"--teleop.id={lead.id}",
     ]
