@@ -4,6 +4,10 @@ Runs a preflight health check on BOTH arms (all motors respond, no error bits,
 voltages sane), then launches lerobot-teleoperate with a motion clamp
 (--robot.max_relative_target) to cap per-cycle current spikes.
 
+Note: the motion clamp is for *teleop* on a marginal supply. Do NOT reuse the same
+clamp during lerobot-record or policy eval — it clamps legitimate fast actions too and
+silently degrades the recorded/executed motion. Record with a beefier supply instead.
+
 Examples:
     soarm-teleop                 # preflight + clamped teleop
     soarm-teleop --clamp 12      # looser clamp (faster, more current)
@@ -63,11 +67,11 @@ def main() -> None:
         return
 
     cfg = load_config()
-    f, l = cfg["follower"], cfg["leader"]
+    f, lead = cfg["follower"], cfg["leader"]
     cmd = [
         "lerobot-teleoperate",
         "--robot.type=so101_follower", f"--robot.port={f.port}", f"--robot.id={f.id}",
-        "--teleop.type=so101_leader", f"--teleop.port={l.port}", f"--teleop.id={l.id}",
+        "--teleop.type=so101_leader", f"--teleop.port={lead.port}", f"--teleop.id={lead.id}",
     ]
     if not args.no_clamp:
         cmd.append(f"--robot.max_relative_target={args.clamp}")

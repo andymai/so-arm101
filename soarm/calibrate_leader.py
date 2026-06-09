@@ -104,9 +104,9 @@ def main() -> None:
 
     # push to motors so is_calibrated == True
     from .devices import leader
-    with leader() as l:
-        l.bus.write_calibration(l.bus.calibration)
-        print("\nis_calibrated:", l.is_calibrated)
+    with leader() as lead:
+        lead.bus.write_calibration(lead.bus.calibration)
+        print("\nis_calibrated:", lead.is_calibrated)
 
     if args.align_wrist_roll:
         _align_wrist_roll()
@@ -119,10 +119,10 @@ def _align_wrist_roll() -> None:
     input("\nAlign BOTH wrist_rolls to the same physical orientation, then press Enter...")
 
     # read both arms' normalized wrist_roll + the leader's current homing
-    with follower() as f, leader() as l:
+    with follower() as f, leader() as lead:
         fpos = follower_positions(f)["wrist_roll"]
-        lpos = leader_positions(l)["wrist_roll"]
-        cur = l.bus.calibration["wrist_roll"].homing_offset
+        lpos = leader_positions(lead)["wrist_roll"]
+        cur = lead.bus.calibration["wrist_roll"].homing_offset
 
     # to raise leader by (fpos - lpos) degrees we lower homing by that many counts
     diff_deg = fpos - lpos

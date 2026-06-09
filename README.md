@@ -64,8 +64,14 @@ so the follower drove that motor near-stall every cycle chasing an unreachable t
 extra current tipped the 12 V **2 A** supply into brownout (whole arm goes limp,
 `id_=1 ... no status packet`). Fixing the sync removed the brownout. Guardrails:
 `soarm-set-protection` caps acceleration (limits current spikes without weakening torque),
-and `soarm-teleop` runs a preflight + motion clamp. A 12 V ≥5 A supply adds headroom for
-fast/loaded motion but isn't required.
+and `soarm-teleop` runs a preflight + motion clamp.
+
+**Power supply:** Seeed officially specs the follower at **12 V 2 A** — but that is the exact
+supply that browns out under load here, and the brownout is a [recurring, unsolved upstream
+issue](https://github.com/huggingface/lerobot/issues/3131). A **12 V 5 A** adapter
+(5.5×2.1 mm barrel, center-positive) is the de-facto community recommendation and the real
+fix for headroom; the guardrails above make the 2 A supply *usable* for gentle teleop but a
+5 A supply is recommended for recording or fast/loaded motion.
 
 ## Bring-up order (from scratch)
 
@@ -90,6 +96,26 @@ soarm-teleop
 
 Full machine-specific log: [`docs/SETUP.md`](docs/SETUP.md).
 
+## Recording demonstrations
+
+`soarm-record` wraps `lerobot-record` with the same preflight health check and your
+configured ports, and adds a simple camera spec. It records leader→follower teleoperated
+episodes into a LeRobot dataset — the input for training a policy.
+
+```bash
+soarm-record --list-cameras                       # discover camera indices
+soarm-record --task "pick up the red cube" --episodes 30 \
+    --camera front=0 --camera wrist=2
+```
+
+It intentionally does **not** apply the teleop motion-clamp (that would cap legitimate
+fast demonstration motion) — record on a 12 V 5 A follower supply for headroom instead.
+
 ## Next steps
-Add a camera (`lerobot-find-cameras`), record demonstrations (`lerobot-record`),
-then train a policy (`lerobot-train`).
+After recording, train a policy with `lerobot-train` (ACT, diffusion, SmolVLA, pi0…) on
+the dataset, then evaluate. The optional `sim/` assets (URDF + MuJoCo MJCF) support visual
+calibration checking and policy eval. See `sim/README.md`.
+
+Phone / leader-less teleop is **deferred** — it requires LeRobot 0.5.x (an upgrade we avoid
+while the encoder-seam bug is unfixed upstream). Rationale and path forward:
+[`docs/PHONE_TELEOP.md`](docs/PHONE_TELEOP.md).
