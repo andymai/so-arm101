@@ -20,7 +20,7 @@ soarm-teleop                  # preflight checks + brownout-safe teleop
 ```
 
 Ports live in [`soarm/config.toml`](soarm/config.toml). macOS `usbmodem` paths can
-change if you replug; re-discover with `lerobot-find-port` (or `soarm-scan --list-ports`)
+change if you replug; run `soarm-find-port --write` to auto-detect both arms by voltage
 and update the config, or pass `--port` to any tool.
 
 ## Tools
@@ -28,6 +28,7 @@ and update the config, or pass `--port` to any tool.
 | Command | What it does |
 |---------|--------------|
 | `soarm-scan` | Per-motor health for one arm: id, voltage, temperature, error bits. `--sweep` for full discovery, `--list-ports` to find boards. |
+| `soarm-find-port` | Auto-detect which port is follower (~12 V) vs leader (~5 V) by supply voltage. `--write` updates `config.toml` — no manual unplug-and-diff after a replug. |
 | `soarm-sync-check` | Compare leader vs follower normalized joint positions (hold both in the same pose). Flags joints beyond `--tol`. |
 | `soarm-recenter` | Set a joint's current pose as encoder center (Feetech `torque=128`). Fixes the encoder-seam problem and aligns continuous joints. |
 | `soarm-fix-voltage-limit` | Repair/standardize STS3215 `Max/Min_Voltage_Limit` (the wrist_roll over-voltage failure). |
