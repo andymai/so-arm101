@@ -21,6 +21,13 @@ soarm-teleop = "soarm.teleop:main"
 soarm-record = "soarm.record:main"
 soarm-calib = "soarm.calib_io:main"
 
+[project.optional-dependencies]
+# Visual calibration checking / policy eval. Not needed for hardware bring-up.
+# Install with: uv sync --extra sim   (then: python sim/fetch.py)
+# NOTE: the stock `python -m mujoco.viewer` (mjpython) crashes on a non-framework
+# venv on macOS — use `python sim/view.py` instead. See sim/README.md.
+sim = ["mujoco>=3.2", "glfw>=2.6"]
+
 [dependency-groups]
 dev = ["pytest>=8"]
 
