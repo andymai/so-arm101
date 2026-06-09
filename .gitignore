@@ -20,3 +20,6 @@ outputs/
 
 # fetched third-party sim assets (see sim/fetch.py)
 sim/SO101/
+
+# teleop run logs (post-mortem captures)
+logs/
