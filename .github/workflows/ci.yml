@@ -26,10 +26,10 @@ jobs:
       - name: Import smoke test
         # The de-facto correctness check — most of the package is hardware-driven and
         # cannot run in CI, but a clean import catches the common breakage.
-        run: uv run python -c "import soarm.scan, soarm.sync_check, soarm.recenter, soarm.fix_voltage_limit, soarm.calibrate_leader, soarm.protect, soarm.teleop, soarm.record, soarm.calib_io, soarm.bus, soarm.devices; print('imports OK')"
+        run: uv run python -c "import soarm.cli, soarm.console, soarm.viz, soarm.fetch, soarm.scan, soarm.sync_check, soarm.recenter, soarm.fix_voltage_limit, soarm.calibrate_leader, soarm.protect, soarm.teleop, soarm.record, soarm.calib_io, soarm.bus, soarm.devices; print('imports OK')"
 
       - name: Lint
-        run: uvx ruff check soarm sim tests
+        run: uvx ruff check soarm tests
 
       - name: Test
         run: uv run pytest -q

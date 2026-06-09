@@ -19,7 +19,6 @@ Example:
 
 from __future__ import annotations
 
-import argparse
 import json
 import threading
 import time
@@ -64,12 +63,7 @@ def _sweep(bus: Bus, ids: list[int]) -> dict[int, tuple[int, int]]:
     return {i: (mn[i], mx[i]) for i in ids}
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser(description="Seam-safe manual leader calibration")
-    ap.add_argument("--align-wrist-roll", action="store_true",
-                    help="also align continuous wrist_roll zero to the follower")
-    args = ap.parse_args()
-
+def run(align_wrist_roll: bool = False) -> None:
     cfg = load_config()["leader"]
     swept_ids = [i for i in MOTORS if MOTORS[i] not in CONTINUOUS]
 
@@ -109,7 +103,7 @@ def main() -> None:
         lead.bus.write_calibration(lead.bus.calibration)
         print("\nis_calibrated:", lead.is_calibrated)
 
-    if args.align_wrist_roll:
+    if align_wrist_roll:
         _align_wrist_roll()
 
 
@@ -139,8 +133,4 @@ def _align_wrist_roll() -> None:
     calib["wrist_roll"]["homing_offset"] = new
     path.write_text(json.dumps(calib, indent=4))
     print(f"wrist_roll aligned: homing {cur} -> {new} (diff {diff_deg:.1f} deg). "
-          "re-run soarm-sync-check to verify.")
-
-
-if __name__ == "__main__":
-    main()
+          "re-run `soarm sync-check` to verify.")
