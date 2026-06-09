@@ -26,7 +26,7 @@ any edit is an import smoke test (catches the most common breakage):
 
 Most tools require the physical arms connected (serial ports). Static edits can only
 be import-checked; real behavior must be verified on hardware. The CLIs (entry points
-in `pyproject.toml`): `soarm-scan`, `soarm-sync-check`, `soarm-recenter`,
+in `pyproject.toml`): `soarm-scan`, `soarm-find-port`, `soarm-sync-check`, `soarm-recenter`,
 `soarm-fix-voltage-limit`, `soarm-calibrate-leader`, `soarm-set-protection`,
 `soarm-teleop`, `soarm-record`, `soarm-calib`. Most take `--arm follower|leader` or `--port`.
 Common workflows are also wrapped in a `justfile` (`just check`, `just scan`, `just teleop`,

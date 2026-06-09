@@ -11,6 +11,7 @@ dependencies = [
 
 [project.scripts]
 soarm-scan = "soarm.scan:main"
+soarm-find-port = "soarm.find_port:main"
 soarm-sync-check = "soarm.sync_check:main"
 soarm-recenter = "soarm.recenter:main"
 soarm-fix-voltage-limit = "soarm.fix_voltage_limit:main"

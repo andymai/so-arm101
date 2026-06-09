@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## [Unreleased]
 
 ### Added
+- `soarm-find-port`: auto-detect which port is follower (~12 V) vs leader (~5 V) by
+  supply voltage; `--write` updates `config.toml` in place (preserving comments).
+- `tests/`: pytest suite for the pure logic (sign-magnitude codecs, present-position
+  decode, `fold_homing`, `error_flags`, `resolve_arm`, config/motor-map invariants,
+  cameras-arg, port classification + config rewrite, CLI resolution). CI runs it.
+- `recenter --verify` now skips the continuous wrist_roll and flags bounded-joint drift
+  OK/HIGH against a threshold.
+
+### Fixed
+- `soarm-record`/`soarm-teleop` resolve `lerobot-*` CLIs next to the interpreter, so
+  subprocess calls work without the venv on PATH (`uv run`, direct path, pipx).
+- `record`: validate `--camera NAME=INDEX` instead of producing a malformed draccus dict.
+- `sim/fetch.py`: guard `extractfile()` returning `None`; add a path-traversal check.
 - `soarm-recenter --verify`: after the "set middle" write, torque the joint to goal 2048
   and report drift, confirming the recenter physically held.
 - `soarm-record`: preflight-checked wrapper over `lerobot-record` with a simple camera
