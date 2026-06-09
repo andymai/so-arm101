@@ -11,7 +11,6 @@ Examples:
 
 from __future__ import annotations
 
-import argparse
 import shutil
 from pathlib import Path
 
@@ -36,26 +35,18 @@ def _pairs() -> list[tuple[Path, Path]]:
     ]
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser(description="Backup/restore LeRobot calibration")
-    ap.add_argument("action", choices=["backup", "restore", "path"])
-    args = ap.parse_args()
-
-    if args.action == "path":
+def run(action: str) -> None:
+    if action == "path":
         print("follower:", follower_cache())
         print("leader:  ", leader_cache())
         return
 
     REPO.mkdir(parents=True, exist_ok=True)
     for cache, repo in _pairs():
-        src, dst = (cache, repo) if args.action == "backup" else (repo, cache)
+        src, dst = (cache, repo) if action == "backup" else (repo, cache)
         if not src.exists():
             print(f"skip (missing): {src}")
             continue
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)
-        print(f"{args.action}: {src}  ->  {dst}")
-
-
-if __name__ == "__main__":
-    main()
+        print(f"{action}: {src}  ->  {dst}")

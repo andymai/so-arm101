@@ -16,7 +16,6 @@ try:
     import tomllib  # Python 3.11+
 except ModuleNotFoundError:  # Python 3.10
     import tomli as tomllib
-import argparse
 import sys
 import time
 from contextlib import contextmanager
@@ -101,13 +100,6 @@ def load_config() -> dict[str, ArmCfg]:
         name: ArmCfg(name=name, port=d["port"], id=d["id"], supply=d.get("supply", ""))
         for name, d in data.items()
     }
-
-
-def add_arm_port_args(ap: argparse.ArgumentParser, *, arm_default: str | None = None) -> None:
-    """Add the shared --arm/--port selection flags used by every per-arm CLI."""
-    ap.add_argument("--arm", choices=["follower", "leader"], default=arm_default,
-                    help="arm from config.toml")
-    ap.add_argument("--port", help="explicit serial port (overrides --arm)")
 
 
 def resolve_arm(arm: str | None, port: str | None) -> tuple[str, str]:

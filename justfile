@@ -14,7 +14,7 @@ hooks:
 
 # Import smoke test — the de-facto correctness check (no hardware needed)
 check:
-    uv run python -c "import soarm.scan, soarm.sync_check, soarm.recenter, soarm.fix_voltage_limit, soarm.calibrate_leader, soarm.protect, soarm.teleop, soarm.record, soarm.calib_io, soarm.bus, soarm.devices; print('imports OK')"
+    uv run python -c "import soarm.cli, soarm.console, soarm.viz, soarm.fetch, soarm.scan, soarm.sync_check, soarm.recenter, soarm.fix_voltage_limit, soarm.calibrate_leader, soarm.protect, soarm.teleop, soarm.record, soarm.calib_io, soarm.bus, soarm.devices; print('imports OK')"
 
 # Run the test suite (pure logic; no hardware needed)
 test:
@@ -22,34 +22,46 @@ test:
 
 # Lint
 lint:
-    uvx ruff check soarm sim tests
+    uvx ruff check soarm tests
 
 # Bus health for an arm:  just scan follower
 scan arm="follower":
-    uv run soarm-scan --arm {{arm}}
+    uv run soarm scan --arm {{arm}}
 
 # Compare leader/follower joint sync (hold both in the same pose)
 sync-check:
-    uv run soarm-sync-check
+    uv run soarm sync-check
 
 # Brownout-safe teleoperation (preflight + motion clamp)
 teleop:
-    uv run soarm-teleop
+    uv run soarm teleop
 
 # Record demonstrations:  just record "pick up the cube" 30
 record task episodes="30":
-    uv run soarm-record --task "{{task}}" --episodes {{episodes}}
+    uv run soarm record --task "{{task}}" --episodes {{episodes}}
 
 # Apply moderate brownout protection to the follower
 protect:
-    uv run soarm-set-protection --arm follower
+    uv run soarm set-protection --arm follower
 
 # Back up / restore calibration between repo and LeRobot cache
 backup:
-    uv run soarm-calib backup
+    uv run soarm calib backup
 restore:
-    uv run soarm-calib restore
+    uv run soarm calib restore
 
-# Fetch SO-101 simulation assets (URDF + MuJoCo MJCF)
-fetch-sim:
-    uv run python sim/fetch.py
+# Fetch the SO-101 URDF + meshes for visualization (Rerun)
+fetch:
+    uv run soarm fetch
+
+# Offline Rerun viewer (neutral pose; `just view sweep` to sweep joints)
+view mode="":
+    uv run soarm view {{ if mode == "sweep" { "--sweep" } else { "" } }}
+
+# Live digital twin: overlay leader (ghost) on follower, plot sync
+twin:
+    uv run soarm twin --live
+
+# Replay a recorded episode:  just replay ./outputs/my_dataset 0
+replay dataset episode="0":
+    uv run soarm replay "{{dataset}}" --episode {{episode}}

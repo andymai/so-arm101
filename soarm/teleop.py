@@ -17,7 +17,6 @@ Examples:
 
 from __future__ import annotations
 
-import argparse
 import datetime
 import subprocess
 import sys
@@ -55,20 +54,13 @@ def _preflight(min_volt: float = 9.0) -> bool:
     return ok
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser(description="Brownout-safe teleoperation")
-    ap.add_argument("--clamp", type=float, default=8.0,
-                    help="max_relative_target degrees per cycle (current cap)")
-    ap.add_argument("--no-clamp", action="store_true", help="disable motion clamp")
-    ap.add_argument("--check-only", action="store_true", help="run preflight then exit")
-    ap.add_argument("--skip-preflight", action="store_true")
-    args = ap.parse_args()
-
-    if not args.skip_preflight:
+def run(clamp: float = 8.0, no_clamp: bool = False, check_only: bool = False,
+        skip_preflight: bool = False) -> None:
+    if not skip_preflight:
         if not _preflight():
-            print("\nAborting: fix the issues above (see soarm-scan) before teleoperating.")
+            print("\nAborting: fix the issues above (see `soarm scan`) before teleoperating.")
             raise SystemExit(1)
-    if args.check_only:
+    if check_only:
         return
 
     cfg = load_config()
@@ -78,8 +70,8 @@ def main() -> None:
         "--robot.type=so101_follower", f"--robot.port={f.port}", f"--robot.id={f.id}",
         "--teleop.type=so101_leader", f"--teleop.port={lead.port}", f"--teleop.id={lead.id}",
     ]
-    if not args.no_clamp:
-        cmd.append(f"--robot.max_relative_target={args.clamp}")
+    if not no_clamp:
+        cmd.append(f"--robot.max_relative_target={clamp}")
     print("\nlaunching:", " ".join(cmd), "\n")
     raise SystemExit(_run_logged(cmd))
 
@@ -129,7 +121,3 @@ def _post_mortem(log) -> None:
         except Exception as e:  # noqa: BLE001 — diagnostics must not raise
             emit(f"  [{arm}] bus unavailable: {e}")
     emit("=== end post-mortem — share this log to diagnose the limp ===")
-
-
-if __name__ == "__main__":
-    main()

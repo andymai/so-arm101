@@ -7,26 +7,17 @@ requires-python = ">=3.10,<3.13"
 dependencies = [
     "lerobot[feetech]>=0.4.4",
     "tomli>=2.0; python_version < '3.11'",
+    "typer>=0.12",
+    "rich>=13",
+    # Visualization. rerun-sdk is capped <0.27 to match lerobot's own pin (it has
+    # no Python URDF API in 0.26, so we do FK with yourdfpy and log meshes ourselves).
+    "rerun-sdk>=0.24,<0.27",
+    "yourdfpy>=0.0.56",
 ]
 
 [project.scripts]
-soarm-scan = "soarm.scan:main"
-soarm-find-port = "soarm.find_port:main"
-soarm-sync-check = "soarm.sync_check:main"
-soarm-recenter = "soarm.recenter:main"
-soarm-fix-voltage-limit = "soarm.fix_voltage_limit:main"
-soarm-calibrate-leader = "soarm.calibrate_leader:main"
-soarm-set-protection = "soarm.protect:main"
-soarm-teleop = "soarm.teleop:main"
-soarm-record = "soarm.record:main"
-soarm-calib = "soarm.calib_io:main"
-
-[project.optional-dependencies]
-# Visual calibration checking / policy eval. Not needed for hardware bring-up.
-# Install with: uv sync --extra sim   (then: python sim/fetch.py)
-# NOTE: the stock `python -m mujoco.viewer` (mjpython) crashes on a non-framework
-# venv on macOS — use `python sim/view.py` instead. See sim/README.md.
-sim = ["mujoco>=3.2", "glfw>=2.6"]
+# Single first-class entry point; subcommands live in soarm/cli.py (Typer).
+soarm = "soarm.cli:app"
 
 [dependency-groups]
 dev = ["pytest>=8"]
