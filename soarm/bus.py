@@ -138,6 +138,18 @@ def decode_present_position(raw: int) -> int:
     return -(raw & 0x7FFF) if raw & 0x8000 else raw
 
 
+def fold_homing(value: int, sign_bit: int = HOMING_SIGN_BIT) -> int:
+    """Fold a continuous-joint homing offset into the encodable ±(2**sign_bit - 1) window
+    by whole turns. A full-RESOLUTION shift is physically identical for a continuous joint,
+    so this lets a correction that would overflow the 11-bit field wrap to an equal angle."""
+    limit = (1 << sign_bit) - 1
+    while value > limit:
+        value -= RESOLUTION
+    while value < -limit:
+        value += RESOLUTION
+    return value
+
+
 class Bus:
     """One arm's bus. Use as a context manager."""
 

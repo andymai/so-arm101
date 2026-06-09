@@ -32,6 +32,7 @@ from .bus import (
     Bus,
     BusCommError,
     decode_present_position,
+    fold_homing,
     load_config,
 )
 from .calib_io import leader_cache
@@ -124,15 +125,10 @@ def _align_wrist_roll() -> None:
         lpos = leader_positions(lead)["wrist_roll"]
         cur = lead.bus.calibration["wrist_roll"].homing_offset
 
-    # to raise leader by (fpos - lpos) degrees we lower homing by that many counts
+    # to raise leader by (fpos - lpos) degrees we lower homing by that many counts, then
+    # fold into the ±2047 window the Homing_Offset register can store (continuous joint)
     diff_deg = fpos - lpos
-    new = cur - round(diff_deg * RESOLUTION / 360)
-    # continuous joint: shifting by a full turn is physically identical, so fold the
-    # correction into the +/-2047 window the Homing_Offset register can store
-    while new > 2047:
-        new -= RESOLUTION
-    while new < -2047:
-        new += RESOLUTION
+    new = fold_homing(cur - round(diff_deg * RESOLUTION / 360))
 
     # apply to the motor EEPROM and update the calibration JSON
     wid = NAME_TO_ID["wrist_roll"]

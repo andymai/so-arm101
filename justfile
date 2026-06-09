@@ -11,9 +11,13 @@ sync:
 check:
     uv run python -c "import soarm.scan, soarm.sync_check, soarm.recenter, soarm.fix_voltage_limit, soarm.calibrate_leader, soarm.protect, soarm.teleop, soarm.record, soarm.calib_io, soarm.bus, soarm.devices; print('imports OK')"
 
-# Lint (if ruff is available)
+# Run the test suite (pure logic; no hardware needed)
+test:
+    uv run pytest -q
+
+# Lint
 lint:
-    uvx ruff check soarm
+    uvx ruff check soarm sim tests
 
 # Bus health for an arm:  just scan follower
 scan arm="follower":

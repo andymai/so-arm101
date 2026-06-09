@@ -16,7 +16,17 @@ from __future__ import annotations
 
 import argparse
 
-from .bus import MOTORS, NAME_TO_ID, BusCommError, Bus, add_arm_port_args, resolve_arm
+from .bus import (
+    CONTINUOUS,
+    MOTORS,
+    NAME_TO_ID,
+    BusCommError,
+    Bus,
+    add_arm_port_args,
+    resolve_arm,
+)
+
+DRIFT_OK = 25  # counts (~2.2 deg); below this the recenter clearly held
 
 
 def main() -> None:
@@ -44,12 +54,20 @@ def main() -> None:
                 before = bus.present_position(mid)
                 homing = bus.recenter(mid)
                 after = bus.present_position(mid)
-                drift = f"  drift {bus.verify_center(mid)}" if args.verify else ""
+                verify = ""
+                if args.verify:
+                    if MOTORS[mid] in CONTINUOUS:
+                        # raw center 2048 isn't this joint's calibrated zero, and it can
+                        # rotate the long way around the seam — drift would be meaningless
+                        verify = "  (verify skipped: continuous joint)"
+                    else:
+                        d = bus.verify_center(mid)
+                        verify = f"  drift {d} {'OK' if d <= DRIFT_OK else 'HIGH'}"
             except BusCommError as e:
                 failed += 1
                 print(f"{MOTORS[mid]:14} FAILED: {e}")
                 continue
-            print(f"{MOTORS[mid]:14} pos {before:>5} -> {after:>5}  (homing_offset now {homing}){drift}")
+            print(f"{MOTORS[mid]:14} pos {before:>5} -> {after:>5}  (homing_offset now {homing}){verify}")
     if failed < len(ids):
         print("\nrecentered. NOTE: this changed Homing_Offset; if these joints are calibrated,")
         print("re-run soarm-calibrate-leader (or re-write ranges) so the calibration matches.")
