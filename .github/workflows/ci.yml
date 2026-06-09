@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Sync dependencies
+        run: uv sync
+
+      - name: Import smoke test
+        # The de-facto correctness check — most of the package is hardware-driven and
+        # cannot run in CI, but a clean import catches the common breakage.
+        run: uv run python -c "import soarm.scan, soarm.sync_check, soarm.recenter, soarm.fix_voltage_limit, soarm.calibrate_leader, soarm.protect, soarm.teleop, soarm.record, soarm.calib_io, soarm.bus, soarm.devices; print('imports OK')"
+
+      - name: Lint
+        run: uvx ruff check soarm
