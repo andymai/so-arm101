@@ -52,17 +52,29 @@ def main() -> None:
         _dump(bus, show)
         if args.check:
             return
+        writes = {
+            "Maximum_Acceleration": args.accel,
+            "Acceleration": args.accel,
+            "Max_Voltage_Limit": round(args.max_volt * 10),
+            "Min_Voltage_Limit": round(args.min_volt * 10),
+            "Overload_Torque": args.overload,
+            "Protective_Torque": DEFAULTS["protective_torque"],
+            "Protection_Time": DEFAULTS["protection_time"],
+        }
+        failed = []
         for mid in MOTORS:
-            with bus.unlocked(mid):
-                bus.write(mid, "Maximum_Acceleration", args.accel)
-                bus.write(mid, "Acceleration", args.accel)
-                bus.write(mid, "Max_Voltage_Limit", round(args.max_volt * 10))
-                bus.write(mid, "Min_Voltage_Limit", round(args.min_volt * 10))
-                bus.write(mid, "Overload_Torque", args.overload)
-                bus.write(mid, "Protective_Torque", DEFAULTS["protective_torque"])
-                bus.write(mid, "Protection_Time", DEFAULTS["protection_time"])
+            try:
+                with bus.unlocked(mid):
+                    for reg, val in writes.items():
+                        bus.write_checked(mid, reg, val)
+            except BusCommError as e:
+                failed.append(MOTORS[mid])
+                print(f"  WARNING: {e}")
         print("\napplied. new values:")
         _dump(bus, show)
+    if failed:
+        print(f"\nFAILED on: {', '.join(failed)} — re-run (a motor likely dropped mid-write).")
+        raise SystemExit(1)
     print("\nmoderate protection set: acceleration capped (limits current spikes), "
           "voltage limits standardized, overload protection uniform. Holding torque unchanged.")
 
