@@ -15,9 +15,8 @@ from __future__ import annotations
 
 import argparse
 import subprocess
-import sys
 
-from .bus import ERROR_BITS, MOTORS, Bus, load_config
+from .bus import MOTORS, Bus, error_flags, load_config
 
 
 def _preflight(min_volt: float = 9.0) -> bool:
@@ -31,15 +30,18 @@ def _preflight(min_volt: float = 9.0) -> bool:
                 for mid, name in MOTORS.items():
                     v, comm, err = bus.read(mid, "Present_Voltage")
                     if comm != 0:
-                        print(f"   {name:14} NO RESPONSE"); ok = False; continue
-                    flags = [b for k, b in ERROR_BITS.items() if err & k]
+                        print(f"   {name:14} NO RESPONSE")
+                        ok = False
+                        continue
+                    flags = error_flags(err)
                     low = arm == "follower" and v / 10 < min_volt
                     if flags or low:
                         ok = False
-                        print(f"   {name:14} {v/10}V  PROBLEM: "
+                        print(f"   {name:14} {v/10:.1f}V  PROBLEM: "
                               f"{','.join(flags) or ''}{' LOW_VOLTAGE' if low else ''}")
         except Exception as e:  # noqa: BLE001
-            print(f"   could not open bus: {e}"); ok = False
+            print(f"   could not open bus: {e}")
+            ok = False
     print("preflight:", "PASS" if ok else "FAIL")
     return ok
 

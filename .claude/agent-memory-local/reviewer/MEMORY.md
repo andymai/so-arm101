@@ -1,0 +1,1 @@
+- [soarm conventions](soarm_conventions.md) — SO-ARM101 CLI invariants: Bus read/write comm semantics, value() silent-0 weakness, EEPROM lock, homing 11-bit field

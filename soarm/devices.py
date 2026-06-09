@@ -15,31 +15,25 @@ from .bus import load_config
 
 
 @contextmanager
+def _device(arm: str, config_cls, device_cls, calibrate: bool):
+    cfg = load_config()[arm]
+    dcfg = config_cls(port=cfg.port)
+    dcfg.id = cfg.id
+    dcfg.calibration_dir = None
+    dev = device_cls(dcfg)
+    dev.connect(calibrate=calibrate)
+    try:
+        yield dev
+    finally:
+        dev.disconnect()
+
+
 def follower(calibrate: bool = False):
-    cfg = load_config()["follower"]
-    fcfg = SOFollowerConfig(port=cfg.port)
-    fcfg.id = cfg.id
-    fcfg.calibration_dir = None
-    dev = SOFollower(fcfg)
-    dev.connect(calibrate=calibrate)
-    try:
-        yield dev
-    finally:
-        dev.disconnect()
+    return _device("follower", SOFollowerConfig, SOFollower, calibrate)
 
 
-@contextmanager
 def leader(calibrate: bool = False):
-    cfg = load_config()["leader"]
-    lcfg = SOLeaderConfig(port=cfg.port)
-    lcfg.id = cfg.id
-    lcfg.calibration_dir = None
-    dev = SOLeader(lcfg)
-    dev.connect(calibrate=calibrate)
-    try:
-        yield dev
-    finally:
-        dev.disconnect()
+    return _device("leader", SOLeaderConfig, SOLeader, calibrate)
 
 
 def follower_positions(dev) -> dict[str, float]:

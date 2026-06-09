@@ -1,0 +1,1 @@
+- [SO-ARM101 soarm/ conventions](project_soarm_conventions.md) — fail-loud/degrade-display split, exit code patterns, hardware gotchas to preserve

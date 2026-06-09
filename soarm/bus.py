@@ -16,6 +16,7 @@ try:
     import tomllib  # Python 3.11+
 except ModuleNotFoundError:  # Python 3.10
     import tomli as tomllib
+import argparse
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -64,10 +65,19 @@ REG: dict[str, tuple[int, int]] = {
 # error bits in the status byte
 ERROR_BITS = {1: "VOLTAGE", 2: "ANGLE", 4: "OVERHEAT", 8: "OVERELE", 32: "OVERLOAD"}
 
+
+def error_flags(err: int) -> list[str]:
+    """Decode a motor status byte into the names of its set error bits."""
+    return [b for k, b in ERROR_BITS.items() if err & k]
+
 # Feetech special command: write 128 to Torque_Enable -> set current pos as 2048
 SET_MIDDLE = 128
 RESOLUTION = 4096          # 12-bit encoder
 HOMING_SIGN_BIT = 11       # Homing_Offset magnitude is 11-bit + sign at bit 11
+
+
+class BusCommError(RuntimeError):
+    """A motor did not respond (serial dropout / contention / NAK)."""
 
 
 def _config_path() -> Path:
@@ -88,6 +98,13 @@ def load_config() -> dict[str, ArmCfg]:
         name: ArmCfg(name=name, port=d["port"], id=d["id"], supply=d.get("supply", ""))
         for name, d in data.items()
     }
+
+
+def add_arm_port_args(ap: argparse.ArgumentParser, *, arm_default: str | None = None) -> None:
+    """Add the shared --arm/--port selection flags used by every per-arm CLI."""
+    ap.add_argument("--arm", choices=["follower", "leader"], default=arm_default,
+                    help="arm from config.toml")
+    ap.add_argument("--port", help="explicit serial port (overrides --arm)")
 
 
 def resolve_arm(arm: str | None, port: str | None) -> tuple[str, str]:
@@ -140,10 +157,12 @@ class Bus:
         except Exception:
             pass
 
-    # --- raw register access (does not raise on error bits or serial hiccups) ---
     COMM_FAIL = -1
 
+    # --- raw register access: read() is tolerant (for display); value() raises ---
     def read(self, motor_id: int, reg: str) -> tuple[int, int, int]:
+        """Low-level read. Returns (data, comm, err); comm != 0 means no response.
+        Never raises — callers that display health (scan) inspect comm themselves."""
         addr, length = REG[reg]
         try:
             if length == 1:
@@ -152,17 +171,33 @@ class Bus:
         except Exception:  # serial dropout, contention, etc.
             return (0, self.COMM_FAIL, 0)
 
+    def read_display(self, motor_id: int, reg: str) -> str | int:
+        """Read a register for display purposes. Returns the int value on success,
+        or '--' on comm failure. Use value() when the result feeds a calculation."""
+        data, comm, _ = self.read(motor_id, reg)
+        return "--" if comm != 0 else data
+
     def value(self, motor_id: int, reg: str) -> int:
-        data, _, _ = self.read(motor_id, reg)
+        """Read a register, raising BusCommError on no-response so a dropout is never
+        silently treated as a real value of 0 (which would corrupt calibration)."""
+        data, comm, _ = self.read(motor_id, reg)
+        if comm != 0:
+            raise BusCommError(f"motor {motor_id}: no response reading {reg}")
         return data
 
     def write(self, motor_id: int, reg: str, value: int) -> int:
+        """Low-level write. Returns comm status; use write_checked() when the value
+        is persisted (EEPROM) and a silent failure would matter."""
         addr, length = REG[reg]
         if length == 1:
             comm, _ = self.ph.write1ByteTxRx(self.po, motor_id, addr, value)
         else:
             comm, _ = self.ph.write2ByteTxRx(self.po, motor_id, addr, value)
         return comm
+
+    def write_checked(self, motor_id: int, reg: str, value: int) -> None:
+        if self.write(motor_id, reg, value) != 0:
+            raise BusCommError(f"motor {motor_id}: write {reg}={value} failed")
 
     @contextmanager
     def unlocked(self, motor_id: int):
@@ -174,7 +209,9 @@ class Bus:
             self.write(motor_id, "Lock", 1)
 
     def present_position(self, motor_id: int) -> int:
-        data, _, _ = self.read(motor_id, "Present_Position")
+        data, comm, _ = self.read(motor_id, "Present_Position")
+        if comm != 0:
+            raise BusCommError(f"motor {motor_id}: no response reading position")
         return decode_present_position(data)
 
     def homing_offset(self, motor_id: int) -> int:
@@ -182,12 +219,12 @@ class Bus:
 
     def set_homing_offset(self, motor_id: int, value: int) -> None:
         with self.unlocked(motor_id):
-            self.write(motor_id, "Homing_Offset", encode_sign_magnitude(value))
+            self.write_checked(motor_id, "Homing_Offset", encode_sign_magnitude(value))
 
     def recenter(self, motor_id: int) -> int:
         """Feetech 'set middle': current physical pose becomes 2048. Returns new homing."""
         with self.unlocked(motor_id):
-            self.write(motor_id, "Torque_Enable", SET_MIDDLE)
+            self.write_checked(motor_id, "Torque_Enable", SET_MIDDLE)
         self.write(motor_id, "Torque_Enable", 0)  # release so the joint moves freely
         return self.homing_offset(motor_id)
 

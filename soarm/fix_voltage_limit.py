@@ -22,13 +22,12 @@ from __future__ import annotations
 
 import argparse
 
-from .bus import ERROR_BITS, MOTORS, Bus, resolve_arm
+from .bus import MOTORS, BusCommError, Bus, add_arm_port_args, error_flags, resolve_arm
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Repair/standardize STS3215 voltage limits")
-    ap.add_argument("--arm", choices=["follower", "leader"])
-    ap.add_argument("--port")
+    add_arm_port_args(ap)
     ap.add_argument("--max", type=float, default=16.0, help="Max_Voltage_Limit in volts")
     ap.add_argument("--min", type=float, default=4.0, help="Min_Voltage_Limit in volts")
     ap.add_argument("--check", action="store_true", help="report only, do not write")
@@ -40,29 +39,40 @@ def main() -> None:
     with Bus(port) as bus:
         print(f"{'id':>2}  {'joint':14} {'present':>7} {'max_lim':>7} {'min_lim':>7} {'errors':>10}")
         for mid, name in MOTORS.items():
-            v, comm, err = bus.read(mid, "Present_Voltage")
-            if comm != 0:
-                print(f"{mid:>2}  {name:14} {'NO RESPONSE':>32}")
+            v_raw, comm, err = bus.read(mid, "Present_Voltage")
+            try:
+                if comm != 0:
+                    raise BusCommError(f"motor {mid}: no response")
+                cmax = bus.value(mid, "Max_Voltage_Limit")
+                cmin = bus.value(mid, "Min_Voltage_Limit")
+            except BusCommError:
+                print(f"{mid:>2}  {name:14} {'NO RESPONSE':>34}")
                 continue
-            cmax = bus.value(mid, "Max_Voltage_Limit")
-            cmin = bus.value(mid, "Min_Voltage_Limit")
-            flags = ",".join(b for k, b in ERROR_BITS.items() if err & k) or "ok"
-            print(f"{mid:>2}  {name:14} {v/10:>6}V {cmax/10:>6}V {cmin/10:>6}V {flags:>10}")
+            flags = ",".join(error_flags(err)) or "ok"
+            print(f"{mid:>2}  {name:14} {v_raw/10:>5.1f}V {cmax/10:>6.1f}V {cmin/10:>6.1f}V {flags:>10}")
             if args.check:
                 continue
-            with bus.unlocked(mid):
-                bus.write(mid, "Max_Voltage_Limit", max_raw)
-                bus.write(mid, "Min_Voltage_Limit", min_raw)
+            try:
+                with bus.unlocked(mid):
+                    bus.write_checked(mid, "Max_Voltage_Limit", max_raw)
+                    bus.write_checked(mid, "Min_Voltage_Limit", min_raw)
+            except BusCommError as e:
+                print(f"  WARNING: {e} (motor may be in error state)")
 
         if not args.check:
             print(f"\nset all motors -> max {args.max}V / min {args.min}V. verifying:")
             ok = True
             for mid, name in MOTORS.items():
-                nmax = bus.value(mid, "Max_Voltage_Limit") / 10
-                nmin = bus.value(mid, "Min_Voltage_Limit") / 10
+                try:
+                    nmax = bus.value(mid, "Max_Voltage_Limit") / 10
+                    nmin = bus.value(mid, "Min_Voltage_Limit") / 10
+                except BusCommError:
+                    ok = False
+                    print(f"  {name:14} NO RESPONSE")
+                    continue
                 good = abs(nmax - args.max) < 0.05 and abs(nmin - args.min) < 0.05
                 ok &= good
-                print(f"  {name:14} max {nmax}V min {nmin}V  {'ok' if good else 'MISMATCH'}")
+                print(f"  {name:14} max {nmax:>4.1f}V min {nmin:>4.1f}V  {'ok' if good else 'MISMATCH'}")
             if not ok:
                 print("\nsome writes did not stick — a motor may be in error state; "
                       "power it within its current limit window and retry.")

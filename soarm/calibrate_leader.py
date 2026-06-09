@@ -24,7 +24,15 @@ import json
 import threading
 import time
 
-from .bus import CONTINUOUS, MOTORS, NAME_TO_ID, RESOLUTION, Bus, load_config
+from .bus import (
+    CONTINUOUS,
+    MOTORS,
+    NAME_TO_ID,
+    RESOLUTION,
+    Bus,
+    decode_present_position,
+    load_config,
+)
 from .calib_io import leader_cache
 
 
@@ -37,7 +45,10 @@ def _sweep(bus: Bus, ids: list[int]) -> dict[int, tuple[int, int]]:
     def loop():
         while not stop.is_set():
             for i in ids:
-                p = bus.present_position(i)
+                data, comm, _ = bus.read(i, "Present_Position")
+                if comm != 0:
+                    continue  # drop the sample on a transient dropout, never record 0
+                p = decode_present_position(data)
                 if 0 <= p <= RESOLUTION - 1:
                     mn[i] = min(mn[i], p)
                     mx[i] = max(mx[i], p)
@@ -67,6 +78,10 @@ def main() -> None:
             bus.recenter(mid)
         print("recentered all joints to 2048.")
         ranges = _sweep(bus, swept_ids)
+        bad = [MOTORS[i] for i, (lo, hi) in ranges.items() if hi - lo < 200]
+        if bad:
+            raise SystemExit(f"insufficient range captured for {bad} — sweep each joint "
+                             "fully (or check the bus); not writing a bad calibration.")
         homings = {mid: bus.homing_offset(mid) for mid in MOTORS}
 
     # 3: build calibration dict (wrist_roll is continuous -> full range)

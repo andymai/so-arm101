@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import argparse
 
-from .bus import MOTORS, Bus, resolve_arm
+from .bus import MOTORS, BusCommError, Bus, add_arm_port_args, resolve_arm
 
 # moderate defaults
 DEFAULTS = dict(accel=100, max_volt=16.0, min_volt=4.0,
@@ -33,8 +33,7 @@ DEFAULTS = dict(accel=100, max_volt=16.0, min_volt=4.0,
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Apply moderate brownout/safety limits")
-    ap.add_argument("--arm", choices=["follower", "leader"], default="follower")
-    ap.add_argument("--port")
+    add_arm_port_args(ap, arm_default="follower")
     ap.add_argument("--accel", type=int, default=DEFAULTS["accel"],
                     help="Maximum_Acceleration cap 0-254 (lower = gentler current)")
     ap.add_argument("--max-volt", type=float, default=DEFAULTS["max_volt"])
@@ -68,11 +67,27 @@ def main() -> None:
           "voltage limits standardized, overload protection uniform. Holding torque unchanged.")
 
 
+_HEADER = {
+    "Maximum_Acceleration": "MaxAccel",
+    "Max_Voltage_Limit":    "MaxVolt",
+    "Min_Voltage_Limit":    "MinVolt",
+    "Overload_Torque":      "Overload",
+    "Protective_Torque":    "Protect",
+    "Protection_Time":      "Prot_ms",
+    "Torque_Limit":         "TrqLim",
+}
+
+
 def _dump(bus: Bus, regs: list[str]) -> None:
-    print(f"{'joint':14} " + " ".join(f"{r.split('_')[0][:6]:>7}" for r in regs))
+    print(f"{'joint':14} " + " ".join(f"{_HEADER.get(r, r[:8]):>8}" for r in regs))
     for mid, name in MOTORS.items():
-        vals = [str(bus.value(mid, r)) for r in regs]
-        print(f"{name:14} " + " ".join(f"{v:>7}" for v in vals))
+        cells = []
+        for r in regs:
+            try:
+                cells.append(str(bus.value(mid, r)))
+            except BusCommError:
+                cells.append("--")
+        print(f"{name:14} " + " ".join(f"{c:>8}" for c in cells))
 
 
 if __name__ == "__main__":
