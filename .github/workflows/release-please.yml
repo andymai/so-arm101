@@ -1,0 +1,31 @@
+name: Release Please
+
+# release-please opens (and keeps updating) a release PR that aggregates the
+# conventional-commit history since the last tag. Merging that PR cuts the tag +
+# GitHub release and bumps the version in pyproject.toml (release-type: python).
+#
+# v0.1.0 is the baseline recorded in .release-please-manifest.json; this workflow
+# takes over for v0.1.1+.
+#
+# Note: this uses the default GITHUB_TOKEN. PRs it opens do not trigger downstream
+# workflows (GitHub anti-loop protection), and it does not auto-approve/merge. To add
+# App-token auth + auto-merge (the release-kun pattern), set the RELEASE_KUN_APP_ID /
+# RELEASE_KUN_APP_PRIVATE_KEY secrets and mint a token via actions/create-github-app-token.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

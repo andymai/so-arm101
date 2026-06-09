@@ -120,3 +120,17 @@ calibration checking and policy eval. See `sim/README.md`.
 Phone / leader-less teleop is **deferred** — it requires LeRobot 0.5.x (an upgrade we avoid
 while the encoder-seam bug is unfixed upstream). Rationale and path forward:
 [`docs/PHONE_TELEOP.md`](docs/PHONE_TELEOP.md).
+
+## Development
+
+```bash
+just hooks      # install git hooks (one-time): conventional-commit gate + pre-commit lint/test
+just check      # import smoke test
+just test       # pytest
+just lint       # ruff
+```
+
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/) (enforced by the
+`commit-msg` hook); the pre-commit hook runs ruff + pytest (skip with `SOARM_FAST=1`).
+Releases are automated by [release-please](https://github.com/googleapis/release-please):
+merging its release PR cuts the tag, GitHub release, and version bump from the commit history.

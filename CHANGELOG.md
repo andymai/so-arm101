@@ -14,6 +14,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - `recenter --verify` now skips the continuous wrist_roll and flags bounded-joint drift
   OK/HIGH against a threshold.
 
+### Repo
+- release-please automation (`release-please-config.json` + manifest + workflow),
+  Dependabot (uv + github-actions), and git hooks (`.githooks/`: conventional-commit
+  gate, pre-commit lint/test + lockfile-drift guard, README reminder) installed via
+  `just hooks`.
+
 ### Fixed
 - `soarm-record`/`soarm-teleop` resolve `lerobot-*` CLIs next to the interpreter, so
   subprocess calls work without the venv on PATH (`uv run`, direct path, pipx).
