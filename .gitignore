@@ -17,3 +17,6 @@ venv/
 data/
 outputs/
 *.mp4
+
+# fetched third-party sim assets (see sim/fetch.py)
+sim/SO101/

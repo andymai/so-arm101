@@ -8,7 +8,8 @@ Hold the joint at the pose you want to become "center", then run.
 
 Examples:
     soarm-recenter --arm leader --joint elbow_flex
-    soarm-recenter --arm leader --joint all      # whole arm at current pose
+    soarm-recenter --arm leader --joint all          # whole arm at current pose
+    soarm-recenter --arm leader --joint all --verify  # confirm each recenter held
 """
 
 from __future__ import annotations
@@ -23,6 +24,9 @@ def main() -> None:
     add_arm_port_args(ap)
     ap.add_argument("--joint", required=True,
                     help="joint name (e.g. elbow_flex) or 'all'")
+    ap.add_argument("--verify", action="store_true",
+                    help="after recentering, torque to goal 2048 and report drift "
+                         "(the joint will briefly move and hold center)")
     args = ap.parse_args()
 
     port, _ = resolve_arm(args.arm, args.port)
@@ -40,11 +44,12 @@ def main() -> None:
                 before = bus.present_position(mid)
                 homing = bus.recenter(mid)
                 after = bus.present_position(mid)
+                drift = f"  drift {bus.verify_center(mid)}" if args.verify else ""
             except BusCommError as e:
                 failed += 1
                 print(f"{MOTORS[mid]:14} FAILED: {e}")
                 continue
-            print(f"{MOTORS[mid]:14} pos {before:>5} -> {after:>5}  (homing_offset now {homing})")
+            print(f"{MOTORS[mid]:14} pos {before:>5} -> {after:>5}  (homing_offset now {homing}){drift}")
     if failed < len(ids):
         print("\nrecentered. NOTE: this changed Homing_Offset; if these joints are calibrated,")
         print("re-run soarm-calibrate-leader (or re-write ranges) so the calibration matches.")

@@ -28,7 +28,9 @@ Most tools require the physical arms connected (serial ports). Static edits can 
 be import-checked; real behavior must be verified on hardware. The CLIs (entry points
 in `pyproject.toml`): `soarm-scan`, `soarm-sync-check`, `soarm-recenter`,
 `soarm-fix-voltage-limit`, `soarm-calibrate-leader`, `soarm-set-protection`,
-`soarm-teleop`, `soarm-calib`. Each takes `--arm follower|leader` or `--port`.
+`soarm-teleop`, `soarm-record`, `soarm-calib`. Most take `--arm follower|leader` or `--port`.
+Common workflows are also wrapped in a `justfile` (`just check`, `just scan`, `just teleop`,
+`just record "task" 30`).
 
 ## Architecture (the parts that span files)
 

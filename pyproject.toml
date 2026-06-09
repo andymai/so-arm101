@@ -17,7 +17,12 @@ soarm-fix-voltage-limit = "soarm.fix_voltage_limit:main"
 soarm-calibrate-leader = "soarm.calibrate_leader:main"
 soarm-set-protection = "soarm.protect:main"
 soarm-teleop = "soarm.teleop:main"
+soarm-record = "soarm.record:main"
 soarm-calib = "soarm.calib_io:main"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
 
 [build-system]
 requires = ["hatchling"]

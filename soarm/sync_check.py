@@ -21,10 +21,10 @@ def main() -> None:
     ap.add_argument("--tol", type=float, default=8.0, help="max allowed |diff| in degrees")
     args = ap.parse_args()
 
-    with follower() as f, leader() as l:
-        print("leader is_calibrated:", l.is_calibrated, " follower is_calibrated:", f.is_calibrated)
+    with follower() as f, leader() as lead:
+        print("leader is_calibrated:", lead.is_calibrated, " follower is_calibrated:", f.is_calibrated)
         fpos = follower_positions(f)
-        lpos = leader_positions(l)
+        lpos = leader_positions(lead)
 
     print(f"\n{'joint':14} {'leader':>9} {'follower':>9} {'diff':>8}")
     worst = 0.0

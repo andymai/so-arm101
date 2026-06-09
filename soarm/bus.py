@@ -17,6 +17,7 @@ try:
 except ModuleNotFoundError:  # Python 3.10
     import tomli as tomllib
 import argparse
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -54,6 +55,7 @@ REG: dict[str, tuple[int, int]] = {
     "Over_Current_Protection_Time": (38, 1),
     "Torque_Enable": (40, 1),
     "Acceleration": (41, 1),
+    "Goal_Position": (42, 2),
     "Torque_Limit": (48, 2),
     "Lock": (55, 1),
     "Present_Position": (56, 2),
@@ -235,6 +237,20 @@ class Bus:
             self.write_checked(motor_id, "Torque_Enable", SET_MIDDLE)
         self.write(motor_id, "Torque_Enable", 0)  # release so the joint moves freely
         return self.homing_offset(motor_id)
+
+    def verify_center(self, motor_id: int, settle_s: float = 0.4) -> int:
+        """Confirm a recenter physically held: torque the joint, command goal 2048,
+        and return |Present_Position - 2048| (drift in counts). A small drift means the
+        'set middle' write landed. Leaves torque DISABLED so the joint stays hand-movable."""
+        center = RESOLUTION // 2
+        self.write_checked(motor_id, "Torque_Enable", 1)
+        try:
+            self.write_checked(motor_id, "Goal_Position", center)
+            time.sleep(settle_s)
+            pos = self.present_position(motor_id)
+        finally:
+            self.write(motor_id, "Torque_Enable", 0)  # always release
+        return abs(pos - center)
 
 
 def scan_port(port: str):
