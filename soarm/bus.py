@@ -1,0 +1,197 @@
+"""Shared low-level helpers for talking to the SO-ARM101 Feetech STS3215 bus.
+
+Why this exists: LeRobot's high-level ``read``/``write`` raise on any motor error
+bit, which makes diagnostics impossible when a motor is *in* an error state (e.g.
+the wrist_roll over-voltage failure). Here we keep a thin wrapper around LeRobot's
+``FeetechMotorsBus`` but reach for the underlying ``packet_handler`` so we can read
+registers regardless of error bits, and decode the STS3215 sign-magnitude encodings
+ourselves.
+
+All register addresses are taken from LeRobot's STS_SMS control table.
+"""
+
+from __future__ import annotations
+
+try:
+    import tomllib  # Python 3.11+
+except ModuleNotFoundError:  # Python 3.10
+    import tomli as tomllib
+from contextlib import contextmanager
+from dataclasses import dataclass
+from pathlib import Path
+
+from lerobot.motors import Motor, MotorNormMode
+from lerobot.motors.feetech.feetech import FeetechMotorsBus
+
+# joint name <-> bus id (base -> gripper), identical on both arms
+MOTORS: dict[int, str] = {
+    1: "shoulder_pan",
+    2: "shoulder_lift",
+    3: "elbow_flex",
+    4: "wrist_flex",
+    5: "wrist_roll",   # continuous joint
+    6: "gripper",
+}
+NAME_TO_ID = {v: k for k, v in MOTORS.items()}
+CONTINUOUS = {"wrist_roll"}  # no hard stops; homing-defined zero
+MODEL = "sts3215"
+
+# register name -> (address, byte length), from STS_SMS_SERIES_CONTROL_TABLE
+REG: dict[str, tuple[int, int]] = {
+    "Min_Voltage_Limit": (15, 1),
+    "Max_Voltage_Limit": (14, 1),
+    "Max_Temperature_Limit": (13, 1),
+    "Min_Position_Limit": (9, 2),
+    "Max_Position_Limit": (11, 2),
+    "Phase": (18, 1),
+    "Protection_Current": (28, 2),
+    "Homing_Offset": (31, 2),
+    "Operating_Mode": (33, 1),
+    "Protective_Torque": (34, 1),
+    "Protection_Time": (35, 1),
+    "Overload_Torque": (36, 1),
+    "Over_Current_Protection_Time": (38, 1),
+    "Torque_Enable": (40, 1),
+    "Acceleration": (41, 1),
+    "Torque_Limit": (48, 2),
+    "Lock": (55, 1),
+    "Present_Position": (56, 2),
+    "Present_Voltage": (62, 1),
+    "Present_Temperature": (63, 1),
+    "Maximum_Acceleration": (85, 1),
+}
+
+# error bits in the status byte
+ERROR_BITS = {1: "VOLTAGE", 2: "ANGLE", 4: "OVERHEAT", 8: "OVERELE", 32: "OVERLOAD"}
+
+# Feetech special command: write 128 to Torque_Enable -> set current pos as 2048
+SET_MIDDLE = 128
+RESOLUTION = 4096          # 12-bit encoder
+HOMING_SIGN_BIT = 11       # Homing_Offset magnitude is 11-bit + sign at bit 11
+
+
+def _config_path() -> Path:
+    return Path(__file__).with_name("config.toml")
+
+
+@dataclass
+class ArmCfg:
+    name: str
+    port: str
+    id: str
+    supply: str
+
+
+def load_config() -> dict[str, ArmCfg]:
+    data = tomllib.loads(_config_path().read_text())
+    return {
+        name: ArmCfg(name=name, port=d["port"], id=d["id"], supply=d.get("supply", ""))
+        for name, d in data.items()
+    }
+
+
+def resolve_arm(arm: str | None, port: str | None) -> tuple[str, str]:
+    """Return (port, id) from --arm name and/or explicit --port override."""
+    cfg = load_config()
+    if arm and arm not in cfg:
+        raise SystemExit(f"unknown arm '{arm}'; known: {', '.join(cfg)}")
+    chosen = cfg[arm] if arm else None
+    out_port = port or (chosen.port if chosen else None)
+    out_id = chosen.id if chosen else (arm or "")
+    if not out_port:
+        raise SystemExit("no port: pass --arm follower|leader or --port /dev/...")
+    return out_port, out_id
+
+
+def decode_sign_magnitude(raw: int, sign_bit: int = HOMING_SIGN_BIT) -> int:
+    mag = raw & ((1 << sign_bit) - 1)
+    return -mag if (raw >> sign_bit) & 1 else mag
+
+
+def encode_sign_magnitude(value: int, sign_bit: int = HOMING_SIGN_BIT) -> int:
+    if abs(value) >= (1 << sign_bit):
+        raise ValueError(f"|{value}| exceeds {(1 << sign_bit) - 1} (sign_bit={sign_bit})")
+    return (abs(value) | (1 << sign_bit)) if value < 0 else value
+
+
+def decode_present_position(raw: int) -> int:
+    """Present_Position is sign-magnitude in a 16-bit field (bit 15 = sign)."""
+    return -(raw & 0x7FFF) if raw & 0x8000 else raw
+
+
+class Bus:
+    """One arm's bus. Use as a context manager."""
+
+    def __init__(self, port: str, ids: list[int] | None = None):
+        self.port = port
+        ids = ids or list(MOTORS)
+        motors = {MOTORS[i]: Motor(i, MODEL, MotorNormMode.RANGE_M100_100) for i in ids}
+        self._bus = FeetechMotorsBus(port, motors=motors)
+
+    def __enter__(self) -> "Bus":
+        self._bus.connect(handshake=False)
+        self.ph = self._bus.packet_handler
+        self.po = self._bus.port_handler
+        return self
+
+    def __exit__(self, *exc) -> None:
+        try:
+            self.po.closePort()
+        except Exception:
+            pass
+
+    # --- raw register access (does not raise on error bits or serial hiccups) ---
+    COMM_FAIL = -1
+
+    def read(self, motor_id: int, reg: str) -> tuple[int, int, int]:
+        addr, length = REG[reg]
+        try:
+            if length == 1:
+                return self.ph.read1ByteTxRx(self.po, motor_id, addr)
+            return self.ph.read2ByteTxRx(self.po, motor_id, addr)
+        except Exception:  # serial dropout, contention, etc.
+            return (0, self.COMM_FAIL, 0)
+
+    def value(self, motor_id: int, reg: str) -> int:
+        data, _, _ = self.read(motor_id, reg)
+        return data
+
+    def write(self, motor_id: int, reg: str, value: int) -> int:
+        addr, length = REG[reg]
+        if length == 1:
+            comm, _ = self.ph.write1ByteTxRx(self.po, motor_id, addr, value)
+        else:
+            comm, _ = self.ph.write2ByteTxRx(self.po, motor_id, addr, value)
+        return comm
+
+    @contextmanager
+    def unlocked(self, motor_id: int):
+        """EEPROM writes require Lock=0; relock afterwards."""
+        self.write(motor_id, "Lock", 0)
+        try:
+            yield
+        finally:
+            self.write(motor_id, "Lock", 1)
+
+    def present_position(self, motor_id: int) -> int:
+        data, _, _ = self.read(motor_id, "Present_Position")
+        return decode_present_position(data)
+
+    def homing_offset(self, motor_id: int) -> int:
+        return decode_sign_magnitude(self.value(motor_id, "Homing_Offset"))
+
+    def set_homing_offset(self, motor_id: int, value: int) -> None:
+        with self.unlocked(motor_id):
+            self.write(motor_id, "Homing_Offset", encode_sign_magnitude(value))
+
+    def recenter(self, motor_id: int) -> int:
+        """Feetech 'set middle': current physical pose becomes 2048. Returns new homing."""
+        with self.unlocked(motor_id):
+            self.write(motor_id, "Torque_Enable", SET_MIDDLE)
+        self.write(motor_id, "Torque_Enable", 0)  # release so the joint moves freely
+        return self.homing_offset(motor_id)
+
+
+def scan_port(port: str):
+    """Sweep all baudrates/ids. Returns LeRobot's {baud: [ids]} dict."""
+    return FeetechMotorsBus.scan_port(port)
