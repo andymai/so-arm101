@@ -22,6 +22,14 @@ soarm = "soarm.cli:app"
 [dependency-groups]
 dev = ["pytest>=8"]
 
+[tool.uv]
+# Security override: diffusers <0.38 has two high-severity trust_remote_code RCE
+# bypasses (GHSA-7wx4-6vff-v64p, GHSA-98h9-4798-4q5v). lerobot 0.4.x pins
+# diffusers <0.36, so we force the patched line. This toolkit never imports
+# diffusers itself — only lerobot's diffusion-policy path (unused here) touches it,
+# so the override is safe for everything `soarm` actually does.
+override-dependencies = ["diffusers>=0.38.0"]
+
 [tool.ruff]
 target-version = "py310"
 line-length = 100
