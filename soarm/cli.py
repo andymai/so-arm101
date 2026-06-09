@@ -190,5 +190,11 @@ def calib(
     _calib.run(action.value)
 
 
+# ------------------------------------------------------------------------------- viz
+from . import viz as _viz  # noqa: E402  (registers view/twin/replay/fetch on `app`)
+
+_viz.register(app)
+
+
 if __name__ == "__main__":
     app()
