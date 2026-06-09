@@ -22,42 +22,31 @@ Examples:
 
 from __future__ import annotations
 
-import argparse
-
-from .bus import MOTORS, BusCommError, Bus, add_arm_port_args, resolve_arm
+from .bus import MOTORS, BusCommError, Bus, resolve_arm
+from .console import console, table
 
 # moderate defaults
 DEFAULTS = dict(accel=100, max_volt=16.0, min_volt=4.0,
                 overload_torque=80, protective_torque=20, protection_time=200)
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser(description="Apply moderate brownout/safety limits")
-    add_arm_port_args(ap, arm_default="follower")
-    ap.add_argument("--accel", type=int, default=DEFAULTS["accel"],
-                    help="Maximum_Acceleration cap 0-254 (lower = gentler current)")
-    ap.add_argument("--max-volt", type=float, default=DEFAULTS["max_volt"])
-    ap.add_argument("--min-volt", type=float, default=DEFAULTS["min_volt"])
-    ap.add_argument("--overload", type=int, default=DEFAULTS["overload_torque"],
-                    help="Overload_Torque %% threshold")
-    ap.add_argument("--check", action="store_true", help="report current values only")
-    args = ap.parse_args()
-
-    port, _ = resolve_arm(args.arm, args.port)
+def run(arm: str | None, port: str | None, accel: int = DEFAULTS["accel"],
+        max_volt: float = DEFAULTS["max_volt"], min_volt: float = DEFAULTS["min_volt"],
+        overload: int = DEFAULTS["overload_torque"], check: bool = False) -> None:
+    port, _ = resolve_arm(arm, port)
     show = ["Maximum_Acceleration", "Max_Voltage_Limit", "Min_Voltage_Limit",
             "Overload_Torque", "Protective_Torque", "Protection_Time", "Torque_Limit"]
 
     with Bus(port) as bus:
-        print("current values:")
-        _dump(bus, show)
-        if args.check:
+        _dump(bus, show, title="current values")
+        if check:
             return
         writes = {
-            "Maximum_Acceleration": args.accel,
-            "Acceleration": args.accel,
-            "Max_Voltage_Limit": round(args.max_volt * 10),
-            "Min_Voltage_Limit": round(args.min_volt * 10),
-            "Overload_Torque": args.overload,
+            "Maximum_Acceleration": accel,
+            "Acceleration": accel,
+            "Max_Voltage_Limit": round(max_volt * 10),
+            "Min_Voltage_Limit": round(min_volt * 10),
+            "Overload_Torque": overload,
             "Protective_Torque": DEFAULTS["protective_torque"],
             "Protection_Time": DEFAULTS["protection_time"],
         }
@@ -69,14 +58,14 @@ def main() -> None:
                         bus.write_checked(mid, reg, val)
             except BusCommError as e:
                 failed.append(MOTORS[mid])
-                print(f"  WARNING: {e}")
-        print("\napplied. new values:")
-        _dump(bus, show)
+                console.print(f"  [yellow]WARNING[/]: {e}")
+        _dump(bus, show, title="applied — new values")
     if failed:
-        print(f"\nFAILED on: {', '.join(failed)} — re-run (a motor likely dropped mid-write).")
+        console.print(f"\n[bold red]FAILED on[/]: {', '.join(failed)} — re-run "
+                      "(a motor likely dropped mid-write).")
         raise SystemExit(1)
-    print("\nmoderate protection set: acceleration capped (limits current spikes), "
-          "voltage limits standardized, overload protection uniform. Holding torque unchanged.")
+    console.print("\n[green]moderate protection set[/]: acceleration capped (limits current spikes), "
+                  "voltage limits standardized, overload protection uniform. Holding torque unchanged.")
 
 
 _HEADER = {
@@ -90,17 +79,14 @@ _HEADER = {
 }
 
 
-def _dump(bus: Bus, regs: list[str]) -> None:
-    print(f"{'joint':14} " + " ".join(f"{_HEADER.get(r, r[:8]):>8}" for r in regs))
+def _dump(bus: Bus, regs: list[str], *, title: str) -> None:
+    t = table("joint", *(_HEADER.get(r, r[:8]) for r in regs), title=title)
     for mid, name in MOTORS.items():
         cells = []
         for r in regs:
             try:
                 cells.append(str(bus.value(mid, r)))
             except BusCommError:
-                cells.append("--")
-        print(f"{name:14} " + " ".join(f"{c:>8}" for c in cells))
-
-
-if __name__ == "__main__":
-    main()
+                cells.append("[dim]--[/]")
+        t.add_row(name, *cells)
+    console.print(t)

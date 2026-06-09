@@ -12,9 +12,8 @@ Examples:
 
 from __future__ import annotations
 
-import argparse
-
 from .bus import Bus, MOTORS, _config_path
+from .console import console, table
 
 # follower supply ~12V, leader ~5V; 8V cleanly separates them
 ARM_VOLTAGE_SPLIT = 8.0
@@ -66,34 +65,27 @@ def _candidate_ports() -> list[str]:
             if "usbmodem" in p.device or "ACM" in p.device]
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser(description="Auto-detect follower/leader ports by voltage")
-    ap.add_argument("--write", action="store_true", help="update soarm/config.toml in place")
-    args = ap.parse_args()
-
+def run(write: bool = False) -> None:
     found: dict[str, str] = {}  # arm -> port
-    print(f"{'port':40} {'volt':>6}  arm")
+    t = table("port", "volt", "arm")
     for port in _candidate_ports():
         volt = detect_voltage(port)
         reported = normalize_port(port)
         if volt is None:
-            print(f"{reported:40} {'--':>6}  (no motor — not an arm)")
+            t.add_row(reported, "--", "[dim](no motor — not an arm)[/]")
             continue
         arm = classify_arm(volt)
-        dup = " DUPLICATE" if arm in found else ""
+        dup = " [yellow]DUPLICATE[/]" if arm in found else ""
         found.setdefault(arm, reported)
-        print(f"{reported:40} {volt:>5.1f}V  {arm}{dup}")
+        t.add_row(reported, f"{volt:.1f}V", f"{arm}{dup}")
+    console.print(t)
 
-    if not args.write:
+    if not write:
         return
     if {"follower", "leader"} <= set(found):
         path = _config_path()
         path.write_text(update_config_ports(path.read_text(), found))
-        print(f"\nupdated {path}")
+        console.print(f"\n[green]updated[/] {path}")
     else:
-        print(f"\nnot writing: need both arms, found {sorted(found)}")
+        console.print(f"\n[bold red]not writing[/]: need both arms, found {sorted(found)}")
         raise SystemExit(1)
-
-
-if __name__ == "__main__":
-    main()
