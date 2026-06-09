@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Pre-commit: ruff lint + pytest + uv.lock drift guard, when Python/build files are staged.
+#
+# Fast mode: set SOARM_FAST=1 to skip lint + tests (keeps the uv.lock drift guard and
+# the README review reminder). Use during inner-loop iteration; CI runs the full gate.
+set -euo pipefail
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+
+# Only run when Python source or build-affecting config is staged.
+has_py=false
+if echo "$staged" | grep -qE '(\.py$|(^|/)pyproject\.toml$|(^|/)uv\.lock$)'; then
+    has_py=true
+fi
+
+if [ "$has_py" = true ]; then
+    # uv.lock drift guard: editing pyproject deps without re-locking is a common miss.
+    if grep -qE '(^|/)pyproject\.toml$' <<<"$staged" \
+        && ! grep -qE '(^|/)uv\.lock$' <<<"$staged"; then
+        if ! git diff --quiet uv.lock 2>/dev/null; then
+            echo "pre-commit: pyproject.toml is staged but uv.lock has unstaged changes." >&2
+            echo "  Run 'uv lock' and stage uv.lock, or revert the pyproject change." >&2
+            exit 1
+        fi
+    fi
+
+    if [ "${SOARM_FAST:-0}" = "1" ]; then
+        echo "pre-commit: SOARM_FAST=1 — skipping lint + tests (CI runs the full gate)"
+    else
+        echo "pre-commit: ruff..."
+        uvx ruff check soarm sim tests
+        echo "pre-commit: pytest..."
+        uv run pytest -q
+    fi
+fi
+
+# Non-blocking: surface READMEs near changed source so the committer re-reads them.
+"$(dirname "$0")/check-readme-reminders.sh" || true

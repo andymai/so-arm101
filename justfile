@@ -7,6 +7,11 @@ default:
 sync:
     uv sync
 
+# Install the git hooks (conventional-commit gate + pre-commit lint/test)
+hooks:
+    git config core.hooksPath .githooks
+    @echo "git hooks installed (core.hooksPath = .githooks)"
+
 # Import smoke test — the de-facto correctness check (no hardware needed)
 check:
     uv run python -c "import soarm.scan, soarm.sync_check, soarm.recenter, soarm.fix_voltage_limit, soarm.calibrate_leader, soarm.protect, soarm.teleop, soarm.record, soarm.calib_io, soarm.bus, soarm.devices; print('imports OK')"
