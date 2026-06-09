@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A CLI toolkit (`soarm-*` commands) for bringing up a **Seeed SO-ARM101** robot arm
+A single `soarm` CLI (Typer + Rich) for bringing up a **Seeed SO-ARM101** robot arm
 (leader + follower) on LeRobot. It exists because a real build hit four non-obvious
-hardware failures; each tool encodes the fix. See `README.md` for the four gotchas
+hardware failures; each subcommand encodes the fix. See `README.md` for the four gotchas
 (board jumper+power, voltage-limit lockout, encoder-seam calibration overflow,
 desync-driven current brownout) — that context explains *why* the code is shaped as it is.
 
@@ -17,20 +17,22 @@ uv sync                       # create .venv + install (pinned via uv.lock)
 source .venv/bin/activate
 ```
 
-There is **no test suite or linter configured**. The de-facto correctness check after
-any edit is an import smoke test (catches the most common breakage):
+Quality gates (`just check` / `just test` / `just lint`):
 
 ```bash
-.venv/bin/python -c "import soarm.scan, soarm.sync_check, soarm.recenter, soarm.fix_voltage_limit, soarm.calibrate_leader, soarm.protect, soarm.teleop, soarm.calib_io, soarm.bus, soarm.devices"
+# import smoke test — fastest correctness check after any edit:
+.venv/bin/python -c "import soarm.cli, soarm.console, soarm.viz, soarm.fetch, soarm.scan, soarm.sync_check, soarm.recenter, soarm.fix_voltage_limit, soarm.calibrate_leader, soarm.protect, soarm.teleop, soarm.record, soarm.calib_io, soarm.bus, soarm.devices"
+.venv/bin/python -m pytest -q   # pure-logic tests (no hardware): encoding math, CLI surface, joint mapping
+uvx ruff check soarm tests      # lint
 ```
 
-Most tools require the physical arms connected (serial ports). Static edits can only
-be import-checked; real behavior must be verified on hardware. The CLIs (entry points
-in `pyproject.toml`): `soarm-scan`, `soarm-find-port`, `soarm-sync-check`, `soarm-recenter`,
-`soarm-fix-voltage-limit`, `soarm-calibrate-leader`, `soarm-set-protection`,
-`soarm-teleop`, `soarm-record`, `soarm-calib`. Most take `--arm follower|leader` or `--port`.
-Common workflows are also wrapped in a `justfile` (`just check`, `just scan`, `just teleop`,
-`just record "task" 30`).
+The CLI is one entry point (`soarm = soarm.cli:app` in `pyproject.toml`) exposing
+subcommands: `soarm scan|find-port|sync-check|recenter|fix-voltage-limit|calibrate-leader|set-protection|teleop|record|calib`
+(hardware) and `soarm twin|view|replay|fetch` (visualization). Per-arm commands take
+`--arm follower|leader` or `--port`. Most hardware commands require the physical arms
+connected; static edits can only be import-/unit-checked — real behavior must be verified
+on hardware. Common workflows are wrapped in a `justfile` (`just scan`, `just teleop`,
+`just twin`, `just record "task" 30`).
 
 ## Architecture (the parts that span files)
 
@@ -68,11 +70,27 @@ to motor EEPROM). `soarm/calib_io.py` backs those JSONs up into `calibration/` i
 calibration JSON — LeRobot writes the JSON's values back to the motor on every `connect()`,
 so a motor-only change is silently reverted.
 
-**`soarm-calibrate-leader` deliberately bypasses `lerobot-calibrate`.** The standard tool
+**`soarm calibrate-leader` deliberately bypasses `lerobot-calibrate`.** The standard tool
 zeroes every homing offset first, which re-exposes the raw encoder frame; on the leader,
 joints straddle the 0/4095 encoder seam and the homing math overflows LeRobot's 11-bit
 field. This tool instead recenters each joint (`torque=128` "set middle"), sweeps ranges,
 and writes the calibration JSON directly, preserving the recentering.
+
+**The CLI shell is thin; the logic is not in it.** `soarm/cli.py` is a Typer app that only
+parses args and dispatches; each subcommand calls a `run(...)` in its tool module (`scan.py`,
+`teleop.py`, …). `soarm/console.py` is the shared Rich `Console` + motor-table helper. When
+adding/editing a command, put real logic in the tool module (so it stays testable and the
+bus invariants above are honored), not in `cli.py`.
+
+**Visualization is Rerun, not MuJoCo.** `soarm/viz.py` (commands `twin`/`view`/`replay`)
+renders in [Rerun](https://rerun.io) — LeRobot's own viz stack. `rerun-sdk` is pinned `<0.27`
+to match LeRobot, which predates Rerun's Python URDF API, so we parse the URDF and do forward
+kinematics with `yourdfpy`, log each link mesh once, then stream a per-link `Transform3D`
+each frame. It is kinematics-only (no physics). The live twin reads both arms via `devices.py`
+(the same normalized space as `sync-check`) and overlays leader-on-follower. Assets
+(URDF + meshes) are fetched by `soarm fetch` into `sim/SO101/` (gitignored); the
+joint-mapping math (`normalized_to_radians`) is decoupled from `yourdfpy` so it is
+unit-testable without the assets.
 
 ## Hardware encoding facts (load-bearing)
 
