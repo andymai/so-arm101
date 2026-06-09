@@ -1,0 +1,1 @@
+- [SO-ARM101 ecosystem](project_soarm101_ecosystem.md) — upstream LeRobot/SO-ARM facts vs our toolkit: versions, the still-unsolved seam bug, power specs, set-middle semantics

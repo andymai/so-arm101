@@ -31,15 +31,21 @@ def main() -> int:
 
     prefix = f"{REPO.split('/')[1]}-{BRANCH}/{SUBDIR}/"
     DEST.mkdir(parents=True, exist_ok=True)
+    dest_root = DEST.resolve()
     count = 0
     with tarfile.open(fileobj=io.BytesIO(blob), mode="r:gz") as tar:
         for member in tar.getmembers():
             if not member.isfile() or not member.name.startswith(prefix):
                 continue
             rel = member.name[len(prefix):]
-            out = DEST / rel
+            out = (DEST / rel).resolve()
+            if not out.is_relative_to(dest_root):
+                continue  # path-traversal guard (defense-in-depth on a trusted source)
+            src = tar.extractfile(member)
+            if src is None:
+                continue
             out.parent.mkdir(parents=True, exist_ok=True)
-            with tar.extractfile(member) as src:
+            with src:
                 out.write_bytes(src.read())
             count += 1
 

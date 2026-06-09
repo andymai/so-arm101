@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import re
 import subprocess
 
 from .bus import load_config
@@ -29,9 +30,11 @@ def _cameras_arg(specs: list[str], width: int, height: int, fps: int) -> str:
     """Turn ['front=0', 'wrist=2'] into the draccus cameras dict lerobot-record expects."""
     entries = []
     for spec in specs:
-        if "=" not in spec:
-            raise SystemExit(f"--camera must be NAME=INDEX (got '{spec}')")
-        name, index = spec.split("=", 1)
+        name, _, index = spec.partition("=")
+        # names/indices flow unquoted into a draccus YAML dict, so reject anything that
+        # would corrupt it (spaces, ':', ',', '{') rather than fail confusingly downstream
+        if not index or not re.fullmatch(r"[A-Za-z0-9_]+", name):
+            raise SystemExit(f"--camera must be NAME=INDEX with an alphanumeric NAME (got '{spec}')")
         entries.append(
             f"{name}: {{type: opencv, index_or_path: {index}, "
             f"width: {width}, height: {height}, fps: {fps}}}"
