@@ -115,6 +115,13 @@ def resolve_arm(arm: str | None, port: str | None) -> tuple[str, str]:
     return out_port, out_id
 
 
+def is_controller_port(device: str) -> bool:
+    """True if a serial device path looks like a SO-ARM controller board, across OSes.
+    macOS exposes it as /dev/tty.usbmodem*; Linux as /dev/ttyACM* (CDC) or, with an
+    FTDI/CH340-style adapter, /dev/ttyUSB*. Callers still probe voltage to confirm."""
+    return any(tag in device for tag in ("usbmodem", "ACM", "ttyUSB"))
+
+
 def decode_sign_magnitude(raw: int, sign_bit: int = HOMING_SIGN_BIT) -> int:
     mag = raw & ((1 << sign_bit) - 1)
     return -mag if (raw >> sign_bit) & 1 else mag
