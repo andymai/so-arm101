@@ -12,7 +12,7 @@ Examples:
 
 from __future__ import annotations
 
-from .bus import Bus, MOTORS, _config_path
+from .bus import Bus, MOTORS, _config_path, is_controller_port
 from .console import console, table
 
 # follower supply ~12V, leader ~5V; 8V cleanly separates them
@@ -61,8 +61,7 @@ def update_config_ports(text: str, ports: dict[str, str]) -> str:
 def _candidate_ports() -> list[str]:
     from serial.tools import list_ports
 
-    return [p.device for p in list_ports.comports()
-            if "usbmodem" in p.device or "ACM" in p.device]
+    return [p.device for p in list_ports.comports() if is_controller_port(p.device)]
 
 
 def run(write: bool = False) -> None:
