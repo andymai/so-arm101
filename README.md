@@ -22,9 +22,26 @@ soarm --help                  # all subcommands
 
 Everything is one `soarm` command (Typer + Rich) with subcommands — run `soarm --help`
 to discover them, or `soarm <cmd> --help` for any one. Ports live in
-[`soarm/config.toml`](soarm/config.toml); macOS `usbmodem` paths can change if you
-replug, so run `soarm find-port --write` to auto-detect both arms by voltage and update
-the config, or pass `--port` to any tool.
+[`soarm/config.toml`](soarm/config.toml) and differ by OS — macOS `/dev/tty.usbmodem*`,
+Linux `/dev/ttyACM*` (some adapters `/dev/ttyUSB*`) — and can change on replug. Run
+`soarm find-port --write` to auto-detect both arms by voltage and rewrite the config, or
+pass `--port` to any tool. On **Linux**, first add yourself to the `dialout` group so the
+serial device is openable — see [Linux serial access](#linux-serial-access) below.
+
+### Linux serial access
+
+macOS opens USB serial devices with no special permission; Linux gates `/dev/ttyACM*`
+and `/dev/ttyUSB*` behind the `dialout` group. One-time, per machine:
+
+```bash
+sudo usermod -aG dialout "$USER"     # add yourself to the serial-device group
+# log out and back in (or: newgrp dialout) for the new group to take effect
+groups | grep -q dialout && echo "ok: in dialout"
+```
+
+Without this, every hardware command fails with `Permission denied: '/dev/ttyACM0'`.
+The `uv`/Python toolchain itself needs nothing platform-specific — `uv sync`, the tests,
+and the Rerun visualizers all run identically on macOS and Linux.
 
 ## Tools
 

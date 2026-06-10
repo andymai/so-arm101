@@ -9,14 +9,14 @@ Examples:
 
 from __future__ import annotations
 
-from .bus import MOTORS, Bus, error_flags, resolve_arm, scan_port
+from .bus import MOTORS, Bus, error_flags, is_controller_port, resolve_arm, scan_port
 from .console import console, dropout, status, table
 
 
 def list_controller_ports() -> None:
     from serial.tools import list_ports
 
-    ports = [p.device for p in list_ports.comports() if "usbmodem" in p.device or "ACM" in p.device]
+    ports = [p.device for p in list_ports.comports() if is_controller_port(p.device)]
     console.print("candidate controller ports:")
     for p in ports or ["(none found)"]:
         console.print(f"  {p}")
