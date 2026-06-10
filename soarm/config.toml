@@ -1,7 +1,12 @@
 # SO-ARM101 connection config.
-# Ports are macOS usbmodem paths; they can change if you swap USB ports.
-# Re-discover with: lerobot-find-port  (or `soarm-scan --list-ports`)
-# Any tool accepts --port to override these.
+# Serial ports differ by OS and can change on replug:
+#   macOS: /dev/tty.usbmodem*     Linux: /dev/ttyACM*  (some adapters: /dev/ttyUSB*)
+# The values below are the macOS defaults from the original build. On a new machine,
+# auto-detect both arms by supply voltage and rewrite this file in place with:
+#   soarm find-port --write       (or list candidate boards: soarm scan --list-ports)
+# Any tool also accepts --port to override these.
+# Linux: opening the serial device requires membership in the `dialout` group
+# (see README → "Linux serial access"); macOS needs no such permission.
 
 [follower]
 port = "/dev/tty.usbmodem5B415319461"

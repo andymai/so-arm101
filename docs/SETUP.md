@@ -23,7 +23,9 @@ Follow the prompt (it tells you to unplug, press Enter). Record the port below.
 - FOLLOWER port: /dev/tty.usbmodem5B415319461
 - LEADER   port: /dev/tty.usbmodem5B415322401
 
-(macOS ports look like `/dev/tty.usbmodem585A0076841`)
+(macOS ports look like `/dev/tty.usbmodem585A0076841`; on Linux they are
+`/dev/ttyACM0` etc. — and you must be in the `dialout` group to open them:
+`sudo usermod -aG dialout "$USER"`, then re-login. See README → "Linux serial access".)
 
 ---
 
