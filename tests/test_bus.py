@@ -15,6 +15,7 @@ from soarm.bus import (
     encode_sign_magnitude,
     error_flags,
     fold_homing,
+    is_controller_port,
     lerobot_cli,
     load_config,
     resolve_arm,
@@ -121,6 +122,24 @@ def test_lerobot_cli_resolves_sibling_then_falls_back():
     assert lerobot_cli(bindir.name) == str(bindir)
     # ...and an unknown CLI falls back to the bare name (PATH lookup when activated)
     assert lerobot_cli("definitely-not-a-real-cli-xyz") == "definitely-not-a-real-cli-xyz"
+
+
+@pytest.mark.parametrize("device", [
+    "/dev/tty.usbmodem5B415319461",  # macOS
+    "/dev/ttyACM0",                  # Linux CDC-ACM (Seeed/Waveshare board)
+    "/dev/ttyUSB0",                  # Linux FTDI/CH340 adapter
+])
+def test_is_controller_port_matches_across_oses(device):
+    assert is_controller_port(device)
+
+
+@pytest.mark.parametrize("device", [
+    "/dev/ttyS0",          # legacy onboard serial, not a USB controller
+    "/dev/null",
+    "/dev/tty.Bluetooth",  # macOS bluetooth serial
+])
+def test_is_controller_port_rejects_non_controllers(device):
+    assert not is_controller_port(device)
 
 
 def test_motor_map_consistency():
