@@ -4,6 +4,34 @@ All notable changes to this project are documented here.
 Releases are managed by [release-please](https://github.com/googleapis/release-please)
 from Conventional Commits; entries below the latest are generated on release.
 
+## [0.3.0](https://github.com/andymai/so-arm101/compare/soarm101-v0.2.1...soarm101-v0.3.0) (2026-06-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* the soarm-scan / soarm-teleop / soarm-* entry points are removed. Use `soarm <subcommand>` instead (run `soarm --help`).
+
+### Features
+
+* cross-platform serial support (Linux + macOS) ([639ddfd](https://github.com/andymai/so-arm101/commit/639ddfd06847bac873641c525068658943d3dc56))
+* **ports:** detect controller boards on Linux (ttyACM/ttyUSB) ([e742495](https://github.com/andymai/so-arm101/commit/e7424959bc9022e203c9c8753617491187c5972e))
+* **sim:** add mjpython-free viewer with joint sweep ([babe128](https://github.com/andymai/so-arm101/commit/babe128326e9a377d321fe5085e9f253e4cf292d))
+* **teleop:** log to file + post-mortem on exit to diagnose limps ([001ab26](https://github.com/andymai/so-arm101/commit/001ab26c6ba273980413b215ed1494a9c869d11b))
+* unify into a single soarm Typer CLI ([e439f3a](https://github.com/andymai/so-arm101/commit/e439f3a13ecb6cc4504ff293a107fc57bcbc7574))
+* **viz:** Rerun digital twin, episode replay, and offline viewer ([becda24](https://github.com/andymai/so-arm101/commit/becda24e2166de06bb5241d5747105400bcf4442))
+
+
+### Bug Fixes
+
+* **deps:** override diffusers to &gt;=0.38.0 (two high-severity RCE bypasses) ([998bdbe](https://github.com/andymai/so-arm101/commit/998bdbe49a54c52dd49278a36607bf34ffd842b0))
+* **deps:** patch diffusers RCE bypasses (override to &gt;=0.38.0) ([d8a3096](https://github.com/andymai/so-arm101/commit/d8a30967aa491b2578404fab43e56a3dabcf683e))
+
+
+### Documentation
+
+* document Linux serial access (dialout group) ([2cf8f78](https://github.com/andymai/so-arm101/commit/2cf8f783d68d7f0fe13fe57c138a4f002d45465f))
+* rearchitect for the unified soarm CLI + Rerun viz ([5668e56](https://github.com/andymai/so-arm101/commit/5668e56d9fcae32bf422d213220971facbbe18ce))
+
 ## [0.2.1](https://github.com/andymai/so-arm101/compare/soarm101-v0.2.0...soarm101-v0.2.1) (2026-06-09)
 
 
