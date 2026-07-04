@@ -20,7 +20,7 @@ dependencies = [
 soarm = "soarm.cli:app"
 
 [dependency-groups]
-dev = ["pytest>=9.1.0"]
+dev = ["pytest>=9.1.1"]
 
 [tool.uv]
 # Security override: diffusers <0.38 has two high-severity trust_remote_code RCE
