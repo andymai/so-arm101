@@ -7,6 +7,11 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      # lerobot[feetech] pins rerun-sdk <0.27; bumping past it is unsatisfiable
+      # and fails the updater every run. Track lerobot's cap instead.
+      - dependency-name: "rerun-sdk"
+        versions: [">=0.27"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
