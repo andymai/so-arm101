@@ -9,7 +9,7 @@ parsing, help text, and dispatch.
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 
@@ -45,11 +45,11 @@ class CalibAction(str, Enum):
 
 
 # Reusable option annotations for the shared --arm/--port arm selection.
-ArmOpt = Annotated[Optional[Arm], typer.Option(help="arm from config.toml")]
-PortOpt = Annotated[Optional[str], typer.Option(help="explicit serial port (overrides --arm)")]
+ArmOpt = Annotated[Arm | None, typer.Option(help="arm from config.toml")]
+PortOpt = Annotated[str | None, typer.Option(help="explicit serial port (overrides --arm)")]
 
 
-def _arm(arm: Optional[Arm]) -> Optional[str]:
+def _arm(arm: Arm | None) -> str | None:
     return arm.value if arm else None
 
 
@@ -163,10 +163,10 @@ def teleop(
 
 @app.command()
 def record(
-    task: Annotated[Optional[str], typer.Option(help="natural-language task (dataset label)")] = None,
+    task: Annotated[str | None, typer.Option(help="natural-language task (dataset label)")] = None,
     episodes: Annotated[int, typer.Option(help="number of episodes to record")] = 30,
-    repo_id: Annotated[Optional[str], typer.Option(help="dataset repo id (default <user>/so101-dataset)")] = None,
-    camera: Annotated[Optional[list[str]], typer.Option(help="NAME=INDEX, repeatable")] = None,
+    repo_id: Annotated[str | None, typer.Option(help="dataset repo id (default <user>/so101-dataset)")] = None,
+    camera: Annotated[list[str] | None, typer.Option(help="NAME=INDEX, repeatable")] = None,
     width: Annotated[int, typer.Option()] = 640,
     height: Annotated[int, typer.Option()] = 480,
     fps: Annotated[int, typer.Option()] = 30,

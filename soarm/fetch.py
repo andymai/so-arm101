@@ -24,7 +24,8 @@ DEST = Path(__file__).resolve().parent.parent / "sim" / "SO101"
 def run() -> None:
     url = f"https://codeload.github.com/{REPO}/tar.gz/refs/heads/{BRANCH}"
     print(f"downloading {REPO}@{BRANCH} ...")
-    with urllib.request.urlopen(url) as resp:  # noqa: S310 (trusted host)
+    # trusted host (codeload.github.com), fixed https scheme
+    with urllib.request.urlopen(url) as resp:
         blob = resp.read()
 
     prefix = f"{REPO.split('/')[1]}-{BRANCH}/{SUBDIR}/"

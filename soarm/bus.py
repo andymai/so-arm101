@@ -159,16 +159,17 @@ class Bus:
         motors = {MOTORS[i]: Motor(i, MODEL, MotorNormMode.RANGE_M100_100) for i in ids}
         self._bus = FeetechMotorsBus(port, motors=motors)
 
-    def __enter__(self) -> "Bus":
+    def __enter__(self) -> Bus:  # noqa: PYI034  (`Self` needs py311; target-version is py310)
         self._bus.connect(handshake=False)
         self.ph = self._bus.packet_handler
         self.po = self._bus.port_handler
         return self
 
     def __exit__(self, *exc) -> None:
+        # a failed close must not mask an exception propagating out of the with-block
         try:
             self.po.closePort()
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
 
     COMM_FAIL = -1
@@ -187,7 +188,7 @@ class Bus:
                     result = self.ph.read1ByteTxRx(self.po, motor_id, addr)
                 else:
                     result = self.ph.read2ByteTxRx(self.po, motor_id, addr)
-            except Exception:  # serial dropout, contention, etc.
+            except Exception:  # noqa: BLE001  (serial dropout, contention)
                 result = (0, self.COMM_FAIL, 0)
             if result[1] == 0:  # comm success — stop retrying
                 break

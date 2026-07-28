@@ -56,10 +56,9 @@ def _preflight(min_volt: float = 9.0) -> bool:
 
 def run(clamp: float = 8.0, no_clamp: bool = False, check_only: bool = False,
         skip_preflight: bool = False) -> None:
-    if not skip_preflight:
-        if not _preflight():
-            print("\nAborting: fix the issues above (see `soarm scan`) before teleoperating.")
-            raise SystemExit(1)
+    if not skip_preflight and not _preflight():
+        print("\nAborting: fix the issues above (see `soarm scan`) before teleoperating.")
+        raise SystemExit(1)
     if check_only:
         return
 
@@ -81,7 +80,7 @@ def _run_logged(cmd: list[str]) -> int:
     which drops torque on the whole arm), run a post-mortem so an intermittent 'goes limp'
     is self-documenting: the log holds the death traceback AND the motor state at failure."""
     LOG_DIR.mkdir(exist_ok=True)
-    stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    stamp = datetime.datetime.now().astimezone().strftime("%Y%m%d-%H%M%S")
     logpath = LOG_DIR / f"teleop-{stamp}.log"
     print(f"logging to {logpath}\n")
     with open(logpath, "w") as log:

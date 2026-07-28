@@ -22,12 +22,12 @@ Examples:
 
 from __future__ import annotations
 
-from .bus import MOTORS, BusCommError, Bus, resolve_arm
+from .bus import MOTORS, Bus, BusCommError, resolve_arm
 from .console import console, table
 
 # moderate defaults
-DEFAULTS = dict(accel=100, max_volt=16.0, min_volt=4.0,
-                overload_torque=80, protective_torque=20, protection_time=200)
+DEFAULTS = {"accel": 100, "max_volt": 16.0, "min_volt": 4.0,
+            "overload_torque": 80, "protective_torque": 20, "protection_time": 200}
 
 
 def run(arm: str | None, port: str | None, accel: int = DEFAULTS["accel"],

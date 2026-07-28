@@ -34,6 +34,12 @@ override-dependencies = ["diffusers>=0.38.0"]
 target-version = "py310"
 line-length = 100
 
+[tool.ruff.lint]
+# E402 is not in ruff's default rule set, which made the deliberate bottom-of-file
+# `viz` import in cli.py look like an unused noqa (RUF100) and stripped it. Selecting
+# it keeps that suppression meaningful instead of silently dropping the guard.
+extend-select = ["E402"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
