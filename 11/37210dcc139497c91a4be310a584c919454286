@@ -1,0 +1,45 @@
+soarm/viz.py
+  s_6bce5540073f3d::t_c9bbc3de2061b4 238
+  s_6bce5540073f3d::t_25674c85363050 19,110,124,161,246
+tests/test_bus.py
+  s_6bce5540073f3d::t_25674c85363050 6-7
+soarm/fix_voltage_limit.py
+  s_6bce5540073f3d::t_25674c85363050 23
+soarm/fetch.py
+  s_6bce5540073f3d::t_21dde659724e78 27
+  s_6bce5540073f3d::t_25674c85363050 28
+soarm/bus.py
+  s_6bce5540073f3d::t_c9bbc3de2061b4 191
+  s_6bce5540073f3d::t_dfe74e5e3f1643 162
+  s_6bce5540073f3d::t_1c41622759522b 169,172
+soarm/recenter.py
+  s_6bce5540073f3d::t_25674c85363050 22
+soarm/cli.py
+  s_6bce5540073f3d::t_25674c85363050 12,48-49,52,166,168-169
+pyproject.toml
+  s_6bce5540073f3d::t_83322173b6140c 37-42
+soarm/teleop.py
+  s_6bce5540073f3d::t_bd43b29de587b4 59-61
+  s_6bce5540073f3d::t_e4690946a35dd6 83
+soarm/protect.py
+  s_6bce5540073f3d::t_04ebca50618bf9 29-30
+  s_6bce5540073f3d::t_25674c85363050 25
+soarm/find_port.py
+  s_6bce5540073f3d::t_25674c85363050 15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "1137210dcc139497c91a4be310a584c919454286",
+  "prompts": {},
+  "sessions": {
+    "s_6bce5540073f3d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3002b613-6ed5-49a0-9040-63b177b973c1",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Andy Aragon <hi@andymai.com>"
+    }
+  }
+}
