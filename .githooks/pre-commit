@@ -28,7 +28,7 @@ if [ "$has_py" = true ]; then
         echo "pre-commit: SOARM_FAST=1 — skipping lint + tests (CI runs the full gate)"
     else
         echo "pre-commit: ruff..."
-        uvx ruff check soarm tests
+        uv run ruff check soarm tests
         echo "pre-commit: pytest..."
         uv run pytest -q
     fi

@@ -22,7 +22,7 @@ test:
 
 # Lint
 lint:
-    uvx ruff check soarm tests
+    uv run ruff check soarm tests
 
 # Bus health for an arm:  just scan follower
 scan arm="follower":
