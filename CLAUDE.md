@@ -23,7 +23,7 @@ Quality gates (`just check` / `just test` / `just lint`):
 # import smoke test — fastest correctness check after any edit:
 .venv/bin/python -c "import soarm.cli, soarm.console, soarm.viz, soarm.fetch, soarm.scan, soarm.sync_check, soarm.recenter, soarm.fix_voltage_limit, soarm.calibrate_leader, soarm.protect, soarm.teleop, soarm.record, soarm.calib_io, soarm.bus, soarm.devices"
 .venv/bin/python -m pytest -q   # pure-logic tests (no hardware): encoding math, CLI surface, joint mapping
-uvx ruff check soarm tests      # lint
+uv run ruff check soarm tests   # lint (ruff is a locked dev dep — not `uvx`, which is unpinned)
 ```
 
 The CLI is one entry point (`soarm = soarm.cli:app` in `pyproject.toml`) exposing

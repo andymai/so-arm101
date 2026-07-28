@@ -20,7 +20,11 @@ dependencies = [
 soarm = "soarm.cli:app"
 
 [dependency-groups]
-dev = ["pytest>=9.1.1"]
+# ruff is a locked dev dependency rather than a bare `uvx ruff` so the version is
+# pinned by uv.lock and upgraded through Dependabot's uv group. Unpinned, a ruff
+# release that widens the default rule set turns main red with no code change —
+# 0.16.0 did exactly that on 2026-07-23.
+dev = ["pytest>=9.1.1", "ruff>=0.16.0"]
 
 [tool.uv]
 # Security override: diffusers <0.38 has two high-severity trust_remote_code RCE

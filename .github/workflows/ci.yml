@@ -29,7 +29,7 @@ jobs:
         run: uv run python -c "import soarm.cli, soarm.console, soarm.viz, soarm.fetch, soarm.scan, soarm.sync_check, soarm.recenter, soarm.fix_voltage_limit, soarm.calibrate_leader, soarm.protect, soarm.teleop, soarm.record, soarm.calib_io, soarm.bus, soarm.devices; print('imports OK')"
 
       - name: Lint
-        run: uvx ruff check soarm tests
+        run: uv run ruff check soarm tests
 
       - name: Test
         run: uv run pytest -q
