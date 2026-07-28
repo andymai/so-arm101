@@ -18,8 +18,8 @@ from .bus import (
     CONTINUOUS,
     MOTORS,
     NAME_TO_ID,
-    BusCommError,
     Bus,
+    BusCommError,
     resolve_arm,
 )
 from .console import console

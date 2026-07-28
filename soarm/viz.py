@@ -16,7 +16,7 @@ from __future__ import annotations
 import math
 import time
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import numpy as np
 import rerun as rr
@@ -107,7 +107,7 @@ def normalized_to_radians(pos: dict[str, float], joint_names: list[str],
     return out
 
 
-def _init(name: str, save: Optional[Path]) -> None:
+def _init(name: str, save: Path | None) -> None:
     """Start a Rerun recording — spawn the viewer, or write a shareable .rrd."""
     rr.init(f"soarm:{name}", spawn=save is None)
     if save is not None:
@@ -121,7 +121,7 @@ def _init(name: str, save: Optional[Path]) -> None:
 def view(
     sweep: Annotated[bool, typer.Option(help="sweep each joint through its range")] = False,
     urdf: Annotated[Path, typer.Option(help="URDF to load")] = DEFAULT_URDF,
-    save: Annotated[Optional[Path], typer.Option(help="write a .rrd instead of opening the viewer")] = None,
+    save: Annotated[Path | None, typer.Option(help="write a .rrd instead of opening the viewer")] = None,
     seconds: Annotated[float, typer.Option(help="sweep duration when --sweep/--save")] = 12.0,
 ) -> None:
     """Offline viewer: the SO-101 at its neutral (range-middle) pose, or a joint sweep."""
@@ -158,7 +158,7 @@ def twin(
     tol: Annotated[float, typer.Option(help="leader/follower divergence threshold (deg)")] = 8.0,
     hz: Annotated[float, typer.Option(help="update rate when --live")] = 30.0,
     urdf: Annotated[Path, typer.Option(help="URDF to load")] = DEFAULT_URDF,
-    save: Annotated[Optional[Path], typer.Option(help="write a .rrd instead of opening the viewer")] = None,
+    save: Annotated[Path | None, typer.Option(help="write a .rrd instead of opening the viewer")] = None,
 ) -> None:
     """Digital twin: overlay the leader (ghost) on the follower (solid) and plot sync."""
     _require_urdf(urdf)
@@ -235,7 +235,7 @@ def _stream_health(arm: str, device) -> None:
             t, comm, _ = ph.read1ByteTxRx(po, mid, t_addr)
             if comm == 0:
                 rr.log(f"health/{arm}/{name}/temp", rr.Scalars(float(t)))
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001, S112  (a dropout must not kill the viz loop)
             continue
 
 
@@ -243,7 +243,7 @@ def replay(
     dataset: Annotated[str, typer.Argument(help="LeRobot dataset: local path or hub repo id")],
     episode: Annotated[int, typer.Option(help="episode index to replay")] = 0,
     urdf: Annotated[Path, typer.Option(help="URDF to load")] = DEFAULT_URDF,
-    save: Annotated[Optional[Path], typer.Option(help="write a .rrd instead of opening the viewer")] = None,
+    save: Annotated[Path | None, typer.Option(help="write a .rrd instead of opening the viewer")] = None,
 ) -> None:
     """Replay a recorded LeRobot episode in Rerun (joint poses + camera frames)."""
     _require_urdf(urdf)

@@ -1,9 +1,9 @@
 """Tests for the pure (hardware-free) logic in soarm.bus."""
 
-import pytest
-
 import sys
 from pathlib import Path
+
+import pytest
 
 from soarm.bus import (
     CONTINUOUS,
@@ -20,7 +20,6 @@ from soarm.bus import (
     load_config,
     resolve_arm,
 )
-
 
 # --- sign-magnitude homing encode/decode (11-bit magnitude + sign at bit 11) ---
 

@@ -12,7 +12,7 @@ Examples:
 
 from __future__ import annotations
 
-from .bus import Bus, MOTORS, _config_path, is_controller_port
+from .bus import MOTORS, Bus, _config_path, is_controller_port
 from .console import console, table
 
 # follower supply ~12V, leader ~5V; 8V cleanly separates them

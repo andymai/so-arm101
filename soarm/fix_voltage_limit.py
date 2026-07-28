@@ -20,7 +20,7 @@ Examples:
 
 from __future__ import annotations
 
-from .bus import MOTORS, BusCommError, Bus, error_flags, resolve_arm
+from .bus import MOTORS, Bus, BusCommError, error_flags, resolve_arm
 from .console import console, dropout, status, table
 
 
