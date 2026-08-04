@@ -24,7 +24,7 @@ soarm = "soarm.cli:app"
 # pinned by uv.lock and upgraded through Dependabot's uv group. Unpinned, a ruff
 # release that widens the default rule set turns main red with no code change —
 # 0.16.0 did exactly that on 2026-07-23.
-dev = ["pytest>=9.1.1", "ruff>=0.16.0"]
+dev = ["pytest>=9.1.1", "ruff>=0.16.1"]
 
 [tool.uv]
 # Security override: diffusers <0.38 has two high-severity trust_remote_code RCE
