@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 Releases are managed by [release-please](https://github.com/googleapis/release-please)
 from Conventional Commits; entries below the latest are generated on release.
 
+## [0.3.1](https://github.com/andymai/so-arm101/compare/soarm101-v0.3.0...soarm101-v0.3.1) (2026-08-05)
+
+
+### Bug Fixes
+
+* **lint:** resolve ruff 0.16 default-rule violations ([#20](https://github.com/andymai/so-arm101/issues/20)) ([8522697](https://github.com/andymai/so-arm101/commit/8522697fb0a5d5ab1513f0befb8db7a85ab06dff))
+
 ## [0.3.0](https://github.com/andymai/so-arm101/compare/soarm101-v0.2.1...soarm101-v0.3.0) (2026-07-16)
 
 
