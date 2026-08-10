@@ -1,6 +1,6 @@
 [project]
 name = "soarm101"
-version = "0.3.0"
+version = "0.3.1"
 description = "Setup, repair, and brownout-safe operation tools for the SO-ARM101 (LeRobot)"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
