@@ -12,6 +12,14 @@ updates:
       # and fails the updater every run. Track lerobot's cap instead.
       - dependency-name: "rerun-sdk"
         versions: [">=0.27"]
+      # Same story for the security updater: advisories want setuptools 83.0.0
+      # and torch 2.13.0, but lerobot 0.6.1 (latest) caps them at <82.0.0 and
+      # <2.12.0. No lerobot release satisfies either, so the job fails every
+      # run on an upgrade that cannot exist. Lift these as lerobot's caps move.
+      - dependency-name: "setuptools"
+        versions: [">=82.0.0"]
+      - dependency-name: "torch"
+        versions: [">=2.12.0"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
