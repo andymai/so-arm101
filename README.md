@@ -73,7 +73,7 @@ A continuous joint (wrist_roll) had a calibration with an arbitrary zero and was
 - `soarm set-protection` caps acceleration. This limits current spikes and does not weaken torque.
 - `soarm teleop` runs a preflight check and a motion clamp.
 
-**Power supply:** The Seeed specification for the follower is **12 V 2 A**. That is the same supply that browns out under load here, and the brownout is a [recurring, unsolved upstream issue](https://github.com/huggingface/lerobot/issues/3131). The community recommends a **12 V 5 A** adapter (5.5×2.1 mm barrel, center-positive), and it is the real fix because it gives headroom. The guardrails above make the 2 A supply *usable* for gentle teleop. For recording, or for motion at high speed or under load, use a 5 A supply.
+**Power supply:** The Seeed specification for the follower is **12 V 2 A**. That is the same supply that browns out under load here. LeRobot 0.6.1 and later retry bus reads after transient Feetech errors ([#3131](https://github.com/huggingface/lerobot/issues/3131), fixed by [#4207](https://github.com/huggingface/lerobot/pull/4207)), but `uv.lock` holds 0.4.4 and 0.5.1. The community recommends a **12 V 5 A** adapter (5.5×2.1 mm barrel, center-positive), and it is the real fix because it gives headroom. The guardrails above make the 2 A supply *usable* for gentle teleop. For recording, or for motion at high speed or under load, use a 5 A supply.
 
 ## Bring-up order (from scratch)
 
@@ -128,7 +128,7 @@ Each command opens a Rerun window. To write a recording file that you can share 
 
 After you record, train a policy on the dataset with `lerobot-train` (ACT, diffusion, SmolVLA, pi0…), then evaluate it. Before you train, use `soarm replay` to examine the demonstrations and `soarm twin` to check the calibration. For the asset details, see [`sim/README.md`](sim/README.md).
 
-Teleop from a phone, without the leader arm, needs LeRobot 0.5.x. This toolkit avoids that upgrade while the encoder-seam bug stays open upstream. [`docs/PHONE_TELEOP.md`](docs/PHONE_TELEOP.md) gives the reasons and the upgrade path.
+Teleop from a phone, without the leader arm, needs LeRobot 0.5 or later and the `lerobot[phone]` extra. The default environment (Python 3.10) locks LeRobot 0.4.4, and the toolkit does not install `lerobot[phone]`. [`docs/PHONE_TELEOP.md`](docs/PHONE_TELEOP.md) gives the reasons and the upgrade path.
 
 ## Development
 
