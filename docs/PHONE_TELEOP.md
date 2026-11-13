@@ -21,10 +21,13 @@ upgrade:
 ## The blocker: the LeRobot upgrade tradeoff
 
 Enabling this means upgrading to **LeRobot 0.5.x**, which we deliberately avoided:
-- 0.5.x changed import paths (would break `soarm/bus.py` / `soarm/devices.py`).
-- The encoder-seam calibration bug this toolkit works around is **still open upstream**
-  ([#3193](https://github.com/huggingface/lerobot/issues/3193)) — upgrading does not fix it
-  and could regress our calibration flow.
+- CI runs on Python 3.12, where `uv.lock` resolves LeRobot 0.5.1, and `tests/test_bus.py`
+  imports `soarm/bus.py` there. The CI import smoke test also imports `soarm/devices.py` on
+  0.5.x, but its hardware behavior still needs testing.
+- Upstream closed the encoder-seam calibration bug that this toolkit works around
+  ([#3193](https://github.com/huggingface/lerobot/issues/3193)) on 2026-04-14, with no linked
+  fix. Re-test the seam workaround after an upgrade, because an upgrade can change the
+  calibration flow.
 
 ## Path forward (when you decide to)
 
