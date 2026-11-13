@@ -1,0 +1,14 @@
+docs/PHONE_TELEOP.md
+  h_b755e1950659f4 25-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4186c1f6b1672a3d8cf718d3f33a0bb930721a19",
+  "prompts": {},
+  "humans": {
+    "h_b755e1950659f4": {
+      "author": "Andy Aragon <hi@andymai.com>"
+    }
+  }
+}
