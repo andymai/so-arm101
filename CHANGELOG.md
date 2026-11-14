@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 Releases are managed by [release-please](https://github.com/googleapis/release-please)
 from Conventional Commits; entries below the latest are generated on release.
 
+## [0.3.2](https://github.com/andymai/so-arm101/compare/soarm101-v0.3.1...soarm101-v0.3.2) (2026-11-14)
+
+
+### Documentation
+
+* rewrite the README in plain language ([#51](https://github.com/andymai/so-arm101/issues/51)) ([d210d38](https://github.com/andymai/so-arm101/commit/d210d382c9969ddd581e9cf9fad2565917a13172))
+
 ## [0.3.1](https://github.com/andymai/so-arm101/compare/soarm101-v0.3.0...soarm101-v0.3.1) (2026-08-05)
 
 
